@@ -30,6 +30,15 @@ app.use("/api/expense", expenseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"), (error) => {
+    if (error) {
+      console.log("Error sending file:", error);
+      res.status(500).send("File not found");
+    }
+  });
+});
+
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log(`Server is successfully listing at http://localhost:${port}`);

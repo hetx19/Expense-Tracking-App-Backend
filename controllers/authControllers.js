@@ -1,3 +1,4 @@
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
@@ -21,10 +22,13 @@ const signUpUser = async (req, res) => {
         .json({ message: "User With This Email Already Exists" });
     }
 
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     const user = await User.create({
       name,
       email,
-      password,
+      password: hashedPassword,
       profileImageUrl,
     });
 
@@ -52,10 +56,10 @@ const signInUser = async (req, res) => {
       return res.status(400).json({ message: "No User Found" });
     }
 
-    const compare = await user.comparePassword(password);
+    const isMatched = await bcrypt.compare(password, user.password);
 
-    if (!compare) {
-      return res.status(400).json({ message: "Invalid Credentials" });
+    if (!isMatched) {
+      return res.status(401).json({ message: "Invalid Credentials" });
     }
 
     res.status(200).json({
@@ -81,5 +85,8 @@ const getUser = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
-
-module.exports = { signUpUser, signInUser, getUser };
+module.exports = {
+  signUpUser,
+  signInUser,
+  getUser,
+};
