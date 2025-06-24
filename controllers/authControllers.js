@@ -85,6 +85,7 @@ const getUser = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
+
 module.exports = {
   signUpUser,
   signInUser,

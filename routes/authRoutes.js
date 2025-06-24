@@ -1,11 +1,11 @@
 const express = require("express");
 const protect = require("../middleware/auth");
+const cloudinary = require("../config/cloudinary");
 const upload = require("../middleware/upload");
 const {
   signUpUser,
   signInUser,
   getUser,
-  updateUser,
 } = require("../controllers/authControllers");
 
 const router = express.Router();
@@ -19,10 +19,17 @@ router.post("/upload-image", upload.single("image"), (req, res) => {
     return res.status(400).json({ message: "No File Uploaded" });
   }
 
-  const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${
-    req.file.filename
-  }`;
-  res.status(200).json({ imageUrl });
+  cloudinary.uploader.upload(
+    req.file.path,
+    { folder: "expense-tracker" },
+    (err, result) => {
+      if (err) {
+        console.error(err);
+      } else {
+        return res.status(200).json({ imageUrl: result.secure_url });
+      }
+    }
+  );
 });
 
 module.exports = router;
