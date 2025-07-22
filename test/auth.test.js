@@ -8,11 +8,12 @@ const jwt = require("jsonwebtoken");
 
 process.env.JWT_SECRET = "testsecretkey";
 
+let mongoServer;
+
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
   await mongoose.connect(uri, {});
-  global.testUserId = new mongoose.Types.ObjectId();
 });
 
 afterAll(async () => {
@@ -25,7 +26,6 @@ afterEach(async () => {
   jest.restoreAllMocks();
 });
 
-// Test User Data
 const mockUserData = {
   name: "John Doe",
   email: `john_${Date.now()}_${Math.random()}@example.com`,
@@ -48,7 +48,7 @@ const createUserAndToken = async () => {
   return { user, token };
 };
 
-describe("User Signup", () => {
+describe("POST /api/auth/signup", () => {
   it("should return 400 if required fields are missing", async () => {
     const res = await request(app).post("/api/auth/signup").send({});
     expect(res.statusCode).toBe(400);
@@ -67,6 +67,7 @@ describe("User Signup", () => {
     await request(app).post("/api/auth/signup").send(mockUserData);
 
     const res = await request(app).post("/api/auth/signup").send(mockUserData);
+
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe("User With This Email Already Exists");
   });
@@ -86,7 +87,7 @@ describe("User Signup", () => {
   });
 });
 
-describe("User Signin", () => {
+describe("POST /api/auth/signin", () => {
   beforeEach(async () => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(mockUserData.password, salt);
@@ -177,13 +178,6 @@ describe("Middleware: protect", () => {
 });
 
 describe("GET /api/auth/getUser", () => {
-  beforeAll(() => {
-    jest.mock("../middleware/auth", () => (req, res, next) => {
-      req.user = { id: "fakeUserId" };
-      next();
-    });
-  });
-
   it("should return user data when authorized", async () => {
     const { user, token } = await createUserAndToken();
 
@@ -193,21 +187,23 @@ describe("GET /api/auth/getUser", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body._id).toBe(user._id.toString());
-    expect(res.body.email).toBe("test@example.com");
+    expect(res.body.email).toBe(user.email);
     expect(res.body.password).toBeUndefined();
   });
 
-  // it("should return 500 if User.findById fails in controller", async () => {
-  //   jest.spyOn(User, "findById").mockImplementationOnce(() => {
-  //     throw new Error("Simulated DB error");
-  //   });
+  it("should return 500 if an error occurs during fetch", async () => {
+    const { token } = await createUserAndToken();
 
-  //   const res = await request(app)
-  //     .get("/api/auth/getUser")
-  //     .set("Authorization", `Bearer faketoken`);
+    jest.spyOn(User, "findById").mockImplementationOnce(() => {
+      throw new Error("Simulated DB error");
+    });
 
-  //   expect(res.statusCode).toBe(500);
-  //   expect(res.body.message).toBe("Server Error");
-  //   expect(res.body.error).toBe("Simulated DB error");
-  // });
+    const res = await request(app)
+      .get("/api/auth/getUser")
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.message).toBe("Server Error");
+    expect(res.body.error).toBe("Simulated DB error");
+  });
 });
