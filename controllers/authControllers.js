@@ -75,7 +75,7 @@ const signInUser = async (req, res) => {
 
 const getUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user._id).select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "User Not Found" });
@@ -87,23 +87,17 @@ const getUser = async (req, res) => {
   }
 };
 
-const uploadImage = (req, res) => {
+const uploadImage = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No File Uploaded" });
     }
 
-    cloudinary.uploader.upload(
-      req.file.path,
-      { folder: "expense-tracker" },
-      (err, result) => {
-        if (err) {
-          console.error(err);
-        } else {
-          return res.status(200).json({ imageUrl: result.secure_url });
-        }
-      }
-    );
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "expense-tracker",
+    });
+
+    return res.status(200).json({ imageUrl: result.secure_url });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
@@ -112,7 +106,7 @@ const uploadImage = (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { name, email, password, profileImageUrl } = req.body;
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user._id).select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "User Not Found" });
@@ -154,7 +148,7 @@ const updateUser = async (req, res) => {
 
 const updateImage = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user._id).select("-password");
 
     if (!req.file) {
       return res.status(200).json({ imageUrl: user.profileImageUrl });
@@ -165,12 +159,12 @@ const updateImage = async (req, res) => {
     const imageName = image.split(".")[0];
 
     if (req.file) {
-      cloudinary.api.delete_resources([`expense-tracker/${imageName}`], {
+      await cloudinary.api.delete_resources([`expense-tracker/${imageName}`], {
         type: "upload",
         resource_type: "image",
       });
 
-      cloudinary.uploader.upload(
+      await cloudinary.uploader.upload(
         req.file.path,
         { folder: "expense-tracker" },
         (err, result) => {
