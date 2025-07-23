@@ -7,9 +7,7 @@ const fileFilter = (req, file, cb) => {
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    const error = new Error("Only .jpeg .jpg and .png formats are allowed");
-    error.code = "INVALID_FILE_TYPE";
-    cb(error, false);
+    cb(null, false);
   }
 };
 

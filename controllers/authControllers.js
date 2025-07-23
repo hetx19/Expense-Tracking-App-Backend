@@ -150,6 +150,10 @@ const updateImage = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password");
 
+    if (!user) {
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
     if (!req.file) {
       return res.status(200).json({ imageUrl: user.profileImageUrl });
     }
@@ -158,24 +162,26 @@ const updateImage = async (req, res) => {
     const image = array[array.length - 1];
     const imageName = image.split(".")[0];
 
-    if (req.file) {
-      await cloudinary.api.delete_resources([`expense-tracker/${imageName}`], {
-        type: "upload",
-        resource_type: "image",
-      });
+    await cloudinary.api.delete_resources([`expense-tracker/${imageName}`], {
+      type: "upload",
+      resource_type: "image",
+    });
 
-      await cloudinary.uploader.upload(
-        req.file.path,
-        { folder: "expense-tracker" },
-        (err, result) => {
-          if (err) {
-            console.error(err);
-          } else {
-            return res.status(200).json({ imageUrl: result.secure_url });
-          }
+    await cloudinary.uploader.upload(
+      req.file.path,
+      {
+        folder: "expense-tracker",
+      },
+      (err, result) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ message: "Server Error", error: err.message });
+        } else {
+          return res.status(200).json({ imageUrl: result.secure_url });
         }
-      );
-    }
+      }
+    );
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
