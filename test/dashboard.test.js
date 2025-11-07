@@ -1,5 +1,5 @@
 jest.mock("../middleware/auth", () => (req, res, next) => {
-  req.user = { id: "60f6f6f6f6f6f6f6f6f6f6f6" };
+  req.user = { _id: "60f6f6f6f6f6f6f6f6f6f6f6" };
   next();
 });
 
