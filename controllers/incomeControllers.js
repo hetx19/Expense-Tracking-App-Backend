@@ -2,7 +2,7 @@ const xlsx = require("xlsx");
 const Income = require("../models/Income");
 
 const addIncome = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
   try {
     const { icon, source, amount, date } = req.body;
 
@@ -27,7 +27,7 @@ const addIncome = async (req, res) => {
 };
 
 const getAllIncome = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
   try {
     const income = await Income.find({ userId }).sort({ date: -1 });
 
@@ -54,7 +54,7 @@ const deleteIncome = async (req, res) => {
 };
 
 const downloadIncomeExcel = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
   try {
     const income = await Income.find({ userId }).sort({ date: -1 });
 

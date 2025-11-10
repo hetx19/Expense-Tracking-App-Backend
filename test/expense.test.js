@@ -23,7 +23,7 @@ afterEach(async () => {
 });
 
 jest.mock("../middleware/auth", () => (req, res, next) => {
-  req.user = { id: global.testUserId.toString() };
+  req.user = { _id: global.testUserId.toString() };
   next();
 });
 
