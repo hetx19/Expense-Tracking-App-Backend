@@ -189,38 +189,6 @@ const updateImage = async (req, res) => {
   }
 };
 
-const deleteUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select("-password");
-
-    if (!user) {
-      return res.status(404).json({ message: "User Not Found" });
-    }
-
-    await Promise.all([
-      Expense.deleteMany({ userId: req.user._id }),
-      Income.deleteMany({ userId: req.user._id }),
-    ]);
-
-    if (user.profileImageUrl) {
-      const array = user.profileImageUrl.split("/");
-      const image = array[array.length - 1];
-      const imageName = image.split(".")[0];
-
-      await cloudinary.api.delete_resources([`expense-tracker/${imageName}`], {
-        type: "upload",
-        resource_type: "image",
-      });
-    }
-
-    await User.findByIdAndDelete(req.user._id);
-
-    res.status(200).json({ message: "User Deleted Successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
-  }
-};
-
 module.exports = {
   signUpUser,
   signInUser,
