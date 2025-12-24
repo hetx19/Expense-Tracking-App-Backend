@@ -1,6 +1,5 @@
-// ✅ MOCK THE AUTH MIDDLEWARE FIRST
 jest.mock("../middleware/auth", () => (req, res, next) => {
-  req.user = { id: "60f6f6f6f6f6f6f6f6f6f6f6" }; // Fake user ObjectId
+  req.user = { _id: "60f6f6f6f6f6f6f6f6f6f6f6" };
   next();
 });
 

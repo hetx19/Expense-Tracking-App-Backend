@@ -2,7 +2,7 @@ const xlsx = require("xlsx");
 const Expense = require("../models/Expense");
 
 const addExpense = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
   try {
     const { icon, category, amount, date } = req.body;
 
@@ -27,7 +27,7 @@ const addExpense = async (req, res) => {
 };
 
 const getAllExpense = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
   try {
     const expense = await Expense.find({ userId }).sort({ date: -1 });
 
@@ -54,7 +54,7 @@ const deleteExpense = async (req, res) => {
 };
 
 const downloadExpenseExcel = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id;
   try {
     const expense = await Expense.find({ userId }).sort({ date: -1 });
 
