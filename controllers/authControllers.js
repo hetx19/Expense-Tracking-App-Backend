@@ -2,6 +2,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const cloudinary = require("../config/cloudinary");
+const Expense = require("../models/Expense");
+const Income = require("../models/Income");
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "2h" });
@@ -187,11 +189,44 @@ const updateImage = async (req, res) => {
   }
 };
 
+const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
+    await Expense.deleteMany({ user: user._id });
+    await Income.deleteMany({ user: user._id });
+
+    if (user.profileImageUrl) {
+      const array = user.profileImageUrl.split("/");
+      const image = array[array.length - 1];
+      const imageName = image.split(".")[0];
+
+      await cloudinary.api.delete_resources([`expense-tracker/${imageName}`], {
+        type: "upload",
+        resource_type: "image",
+      });
+    }
+
+    await User.findByIdAndDelete(req.user._id);
+
+    return res.status(200).json({ message: "User Deleted Successfully" });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   signUpUser,
   signInUser,
   getUser,
   updateUser,
+  deleteUser,
   uploadImage,
   updateImage,
 };
