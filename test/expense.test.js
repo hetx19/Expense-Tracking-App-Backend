@@ -10,7 +10,9 @@ beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
   await mongoose.connect(uri, {});
+
   global.testUserId = new mongoose.Types.ObjectId();
+  global.otherUserId = new mongoose.Types.ObjectId();
 });
 
 afterAll(async () => {
@@ -22,9 +24,17 @@ afterEach(async () => {
   await Expense.deleteMany();
 });
 
+global.currentUserId = null;
+
 jest.mock("../middleware/auth", () => (req, res, next) => {
-  req.user = { _id: global.testUserId.toString() };
+  req.user = {
+    _id: (global.currentUserId || global.testUserId).toString(),
+  };
   next();
+});
+
+beforeEach(() => {
+  global.currentUserId = global.testUserId;
 });
 
 describe("Expense API", () => {
@@ -128,18 +138,40 @@ describe("Expense API", () => {
       expect(res.body.message).toBe("Expense Deleted Successfully");
     });
 
-    it("should return 400 if expense not found", async () => {
+    it("should return 404 if expense not found", async () => {
       const fakeId = new mongoose.Types.ObjectId();
       const res = await request(app).delete(`/api/expense/${fakeId}`);
-      expect(res.statusCode).toBe(400);
+
+      expect(res.statusCode).toBe(404);
       expect(res.body.message).toBe("Expense Not Found");
+    });
+
+    it("should not delete another user's expense", async () => {
+      const expense = await Expense.create({
+        userId: global.testUserId,
+        icon: "🍕",
+        category: "Food",
+        amount: 20,
+        date: new Date(),
+      });
+
+      global.currentUserId = global.otherUserId;
+
+      const res = await request(app).delete(`/api/expense/${expense._id}`);
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body.message).toBe("Expense Not Found");
+
+      const stillExists = await Expense.findById(expense._id);
+      expect(stillExists).not.toBeNull();
     });
 
     it("should return 500 if deleteExpense throws an error", async () => {
       const fakeId = new mongoose.Types.ObjectId();
 
-      const originalFindById = Expense.findById;
-      Expense.findById = jest.fn().mockImplementation(() => {
+      const originalFindOneAndDelete = Expense.findOneAndDelete;
+
+      Expense.findOneAndDelete = jest.fn().mockImplementation(() => {
         throw new Error("Mock delete error");
       });
 
@@ -149,7 +181,7 @@ describe("Expense API", () => {
       expect(res.body.message).toBe("Server Error");
       expect(res.body.error).toBe("Mock delete error");
 
-      Expense.findById = originalFindById;
+      Expense.findOneAndDelete = originalFindOneAndDelete;
     });
   });
 
@@ -166,10 +198,10 @@ describe("Expense API", () => {
       const res = await request(app).get("/api/expense/download");
       expect(res.statusCode).toBe(200);
       expect(res.headers["content-type"]).toBe(
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       );
       expect(res.headers["content-disposition"]).toContain(
-        "attachment; filename=expense-details.xlsx"
+        "attachment; filename=expense-details.xlsx",
       );
     });
 

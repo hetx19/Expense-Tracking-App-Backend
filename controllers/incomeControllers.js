@@ -39,17 +39,24 @@ const getAllIncome = async (req, res) => {
 
 const deleteIncome = async (req, res) => {
   try {
-    const incomeExists = await Income.findById(req.params.id);
+    const deletedIncome = await Income.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
 
-    if (!incomeExists) {
-      res.status(400).json({ message: "Income Not Found" });
-    } else {
-      const deletedIncome = await Income.findByIdAndDelete(req.params.id);
-
-      res.json({ message: "Income Deleted Successfully", deletedIncome });
+    if (!deletedIncome) {
+      return res.status(404).json({ message: "Income Not Found" });
     }
+
+    res.json({
+      message: "Income Deleted Successfully",
+      deletedIncome,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
+    res.status(500).json({
+      message: "Server Error",
+      error: error.message,
+    });
   }
 };
 
