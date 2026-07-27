@@ -278,7 +278,7 @@ describe("PUT /api/auth/updateUser", () => {
     const updatedUser = await User.findById(user._id);
     const isMatch = await bcrypt.compare(
       "newSecurePassword",
-      updatedUser.password
+      updatedUser.password,
     );
     expect(isMatch).toBe(true);
   });
@@ -332,5 +332,14 @@ describe("PUT /api/auth/updateUser", () => {
 
     expect(res.statusCode).toBe(401);
     expect(res.body.message).toBe("Not authorized, token failed");
+  });
+});
+
+describe("POST /api/auth/upload-image", () => {
+  it("should return 401 if no token is provided", async () => {
+    const res = await request(app).post("/api/auth/upload-image");
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body.message).toBe("Not authorized, no token");
   });
 });
