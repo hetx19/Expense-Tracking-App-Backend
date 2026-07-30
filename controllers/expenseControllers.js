@@ -39,17 +39,24 @@ const getAllExpense = async (req, res) => {
 
 const deleteExpense = async (req, res) => {
   try {
-    const expenseExists = await Expense.findById(req.params.id);
+    const deletedExpense = await Expense.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
 
-    if (!expenseExists) {
-      res.status(400).json({ message: "Expense Not Found" });
-    } else {
-      const deletedExpense = await Expense.findByIdAndDelete(req.params.id);
-
-      res.json({ message: "Expense Deleted Successfully", deletedExpense });
+    if (!deletedExpense) {
+      return res.status(404).json({ message: "Expense Not Found" });
     }
+
+    res.json({
+      message: "Expense Deleted Successfully",
+      deletedExpense,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
+    res.status(500).json({
+      message: "Server Error",
+      error: error.message,
+    });
   }
 };
 

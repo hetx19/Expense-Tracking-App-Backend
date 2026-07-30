@@ -19,7 +19,7 @@ router.get("/getUser", protect, getUser);
 router.put("/updateUser", protect, updateUser);
 router.delete("/deleteUser", protect, deleteUser);
 
-router.post("/upload-image", upload.single("image"), uploadImage);
+router.post("/upload-image", protect, upload.single("image"), uploadImage);
 
 router.put("/update-image", protect, upload.single("image"), updateImage);
 

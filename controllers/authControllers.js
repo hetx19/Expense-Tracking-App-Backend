@@ -182,7 +182,7 @@ const updateImage = async (req, res) => {
         } else {
           return res.status(200).json({ imageUrl: result.secure_url });
         }
-      }
+      },
     );
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
@@ -191,14 +191,16 @@ const updateImage = async (req, res) => {
 
 const deleteUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("-password");
+    const user = await User.findById(req.user._id);
 
     if (!user) {
       return res.status(404).json({ message: "User Not Found" });
     }
 
-    await Expense.deleteMany({ user: user._id });
-    await Income.deleteMany({ user: user._id });
+    await Promise.all([
+      Expense.deleteMany({ userId: user._id }),
+      Income.deleteMany({ userId: user._id }),
+    ]);
 
     if (user.profileImageUrl) {
       const array = user.profileImageUrl.split("/");
@@ -211,13 +213,14 @@ const deleteUser = async (req, res) => {
       });
     }
 
-    await User.findByIdAndDelete(req.user._id);
+    await user.deleteOne();
 
     return res.status(200).json({ message: "User Deleted Successfully" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
+    return res.status(500).json({
+      message: "Server Error",
+      error: error.message,
+    });
   }
 };
 

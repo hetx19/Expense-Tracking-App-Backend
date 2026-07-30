@@ -13,6 +13,7 @@ beforeAll(async () => {
   await mongoose.connect(uri, {});
 
   global.testUserId = new mongoose.Types.ObjectId();
+  global.otherUserId = new mongoose.Types.ObjectId();
 });
 
 afterAll(async () => {
@@ -24,9 +25,17 @@ afterEach(async () => {
   await Income.deleteMany();
 });
 
+global.currentUserId = null;
+
 jest.mock("../middleware/auth", () => (req, res, next) => {
-  req.user = { _id: global.testUserId.toString() };
+  req.user = {
+    _id: (global.currentUserId || global.testUserId).toString(),
+  };
   next();
+});
+
+beforeEach(() => {
+  global.currentUserId = global.testUserId;
 });
 
 describe("Income API", () => {
@@ -70,6 +79,8 @@ describe("Income API", () => {
       expect(res.statusCode).toBe(500);
       expect(res.body.message).toBe("Server Error");
       expect(res.body.error).toBe("Mock DB error");
+
+      Income.prototype.save = originalSave;
     });
   });
 
@@ -128,18 +139,39 @@ describe("Income API", () => {
       expect(res.body.message).toBe("Income Deleted Successfully");
     });
 
-    it("should return 400 if income not found", async () => {
+    it("should return 404 if income not found", async () => {
       const fakeId = new mongoose.Types.ObjectId();
       const res = await request(app).delete(`/api/income/${fakeId}`);
-      expect(res.statusCode).toBe(400);
+      expect(res.statusCode).toBe(404);
       expect(res.body.message).toBe("Income Not Found");
+    });
+
+    it("should not delete another user's income", async () => {
+      const income = await Income.create({
+        userId: global.testUserId,
+        icon: "💰",
+        source: "Freelance",
+        amount: 2000,
+        date: new Date(),
+      });
+
+      global.currentUserId = global.otherUserId;
+
+      const res = await request(app).delete(`/api/income/${income._id}`);
+
+      expect(res.statusCode).toBe(404);
+      expect(res.body.message).toBe("Income Not Found");
+
+      const stillExists = await Income.findById(income._id);
+      expect(stillExists).not.toBeNull();
     });
 
     it("should return 500 if deleteIncome throws an error", async () => {
       const fakeId = new mongoose.Types.ObjectId();
 
-      const originalFindById = Income.findById;
-      Income.findById = jest.fn().mockImplementation(() => {
+      const originalFindOneAndDelete = Income.findOneAndDelete;
+
+      Income.findOneAndDelete = jest.fn().mockImplementation(() => {
         throw new Error("Mock delete error");
       });
 
@@ -149,7 +181,7 @@ describe("Income API", () => {
       expect(res.body.message).toBe("Server Error");
       expect(res.body.error).toBe("Mock delete error");
 
-      Income.findById = originalFindById;
+      Income.findOneAndDelete = originalFindOneAndDelete;
     });
   });
 
@@ -166,10 +198,10 @@ describe("Income API", () => {
       const res = await request(app).get("/api/income/download");
       expect(res.statusCode).toBe(200);
       expect(res.header["content-type"]).toBe(
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       );
       expect(res.header["content-disposition"]).toContain(
-        "attachment; filename=income-details.xlsx"
+        "attachment; filename=income-details.xlsx",
       );
     });
 
@@ -185,7 +217,7 @@ describe("Income API", () => {
       expect(res.body.message).toBe("Server Error");
       expect(res.body.error).toBe("Mock Excel error");
 
-      Income.findById = originalFind;
+      Income.find = originalFind;
     });
   });
 });
