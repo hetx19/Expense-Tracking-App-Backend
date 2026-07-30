@@ -4,9 +4,10 @@ const User = require("../models/User");
 const cloudinary = require("../config/cloudinary");
 const Expense = require("../models/Expense");
 const Income = require("../models/Income");
+const env = require("../config/env");
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "2h" });
+  return jwt.sign({ id }, env.JWT_SECRET, { expiresIn: "2h" });
 };
 
 const signUpUser = async (req, res) => {

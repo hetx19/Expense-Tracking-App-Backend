@@ -18,8 +18,7 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const fs = require("fs");
-
-process.env.JWT_SECRET = "testsecretkey";
+const env = require("../config/env");
 
 let mongoServer;
 
@@ -47,7 +46,7 @@ const createUserAndToken = async () => {
     profileImageUrl: "http://example.com/profile.jpg",
   });
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ id: user._id }, env.JWT_SECRET, {
     expiresIn: "2h",
   });
 
@@ -88,7 +87,7 @@ describe("POST /api/auth/upload-image", () => {
     expect(res.body.imageUrl).toBe(mockResult.secure_url);
     expect(mockCloudinary.uploader.upload).toHaveBeenCalledWith(
       expect.any(String),
-      { folder: "expense-tracker" }
+      { folder: "expense-tracker" },
     );
   });
 
@@ -121,7 +120,7 @@ describe("POST /api/auth/upload-image", () => {
 
   it("should handle cloudinary upload error", async () => {
     mockCloudinary.uploader.upload.mockRejectedValue(
-      new Error("Cloudinary upload failed")
+      new Error("Cloudinary upload failed"),
     );
 
     const testImagePath = path.join(__dirname, "fixtures", "test-image.jpg");
@@ -181,7 +180,7 @@ describe("POST /api/auth/update-image", () => {
     expect(res.json).toHaveBeenCalledWith({ imageUrl: mockResult.secure_url });
     expect(mockCloudinary.uploader.upload).toHaveBeenCalledWith(
       "/tmp/test-image.jpg",
-      { folder: "expense-tracker" }
+      { folder: "expense-tracker" },
     );
   });
 
@@ -189,7 +188,7 @@ describe("POST /api/auth/update-image", () => {
     const { uploadImage } = require("../controllers/authControllers");
 
     mockCloudinary.uploader.upload.mockRejectedValue(
-      new Error("Upload failed")
+      new Error("Upload failed"),
     );
 
     const req = { file: { path: "/tmp/test-image.jpg" } };
@@ -245,7 +244,7 @@ describe("PUT /api/auth/update-image", () => {
     mockCloudinary.uploader.upload.mockImplementation(
       (filePath, options, callback) => {
         callback(error, null);
-      }
+      },
     );
 
     const { updateImage } = require("../controllers/authControllers");
@@ -281,7 +280,7 @@ describe("PUT /api/auth/update-image", () => {
         } else {
           return Promise.resolve(mockResult);
         }
-      }
+      },
     );
 
     const { updateImage } = require("../controllers/authControllers");
@@ -302,12 +301,12 @@ describe("PUT /api/auth/update-image", () => {
       {
         type: "upload",
         resource_type: "image",
-      }
+      },
     );
     expect(mockCloudinary.uploader.upload).toHaveBeenCalledWith(
       "/tmp/new-image.jpg",
       { folder: "expense-tracker" },
-      expect.any(Function)
+      expect.any(Function),
     );
   });
 

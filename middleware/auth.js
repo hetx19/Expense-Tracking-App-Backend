@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const env = require("../config/env");
 
 const protect = async (req, res, next) => {
   try {
@@ -6,7 +7,7 @@ const protect = async (req, res, next) => {
     if (!token)
       return res.status(401).json({ message: "Not authorized, no token" });
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, env.JWT_SECRET);
     req.user = { _id: decoded.id };
     next();
   } catch (error) {
