@@ -5,162 +5,178 @@ const cloudinary = require("../config/cloudinary");
 const Expense = require("../models/Expense");
 const Income = require("../models/Income");
 const env = require("../config/env");
+const AppError = require("../utils/AppError");
+const asyncHandler = require("../utils/asyncHandler");
 
 const generateToken = (id) => {
   return jwt.sign({ id }, env.JWT_SECRET, { expiresIn: "2h" });
 };
 
-const signUpUser = async (req, res) => {
+const signUpUser = asyncHandler(async (req, res) => {
   const { name, email, password, profileImageUrl } = req.body;
 
   if (!name || !email || !password) {
-    return res.status(400).json({ message: "Missing Required Fields" });
+    throw new AppError("Missing Required Fields", 400);
   }
 
-  try {
-    const existingUser = await User.findOne({ email });
+  const existingUser = await User.findOne({ email });
 
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "User With This Email Already Exists" });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      profileImageUrl,
-    });
-
-    res.status(201).json({
-      id: user._id,
-      user,
-      token: generateToken(user._id),
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
+  if (existingUser) {
+    throw new AppError("User With This Email Already Exists", 400);
   }
-};
 
-const signInUser = async (req, res) => {
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+
+  const user = await User.create({
+    name,
+    email,
+    password: hashedPassword,
+    profileImageUrl,
+  });
+
+  res.status(201).json({
+    id: user._id,
+    user,
+    token: generateToken(user._id),
+  });
+});
+
+const signInUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ message: "Missing Required Fields" });
+    throw new AppError("Missing Required Fields", 400);
   }
 
-  try {
-    const user = await User.findOne({ email });
+  const user = await User.findOne({ email });
 
-    if (!user) {
-      return res.status(400).json({ message: "No User Found" });
-    }
-
-    const isMatched = await bcrypt.compare(password, user.password);
-
-    if (!isMatched) {
-      return res.status(401).json({ message: "Invalid Credentials" });
-    }
-
-    res.status(200).json({
-      id: user._id,
-      user,
-      token: generateToken(user._id),
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
+  if (!user) {
+    throw new AppError("No User Found", 400);
   }
-};
 
-const getUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select("-password");
+  const isMatched = await bcrypt.compare(password, user.password);
 
-    if (!user) {
-      return res.status(404).json({ message: "User Not Found" });
-    }
-
-    res.status(200).json(user);
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
+  if (!isMatched) {
+    throw new AppError("Invalid Credentials", 401);
   }
-};
 
-const uploadImage = async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No File Uploaded" });
-    }
+  res.status(200).json({
+    id: user._id,
+    user,
+    token: generateToken(user._id),
+  });
+});
 
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "expense-tracker",
-    });
+const getUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password");
 
-    return res.status(200).json({ imageUrl: result.secure_url });
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
+  if (!user) {
+    throw new AppError("User Not Found", 404);
   }
-};
 
-const updateUser = async (req, res) => {
-  try {
-    const { name, email, password, profileImageUrl } = req.body;
-    const user = await User.findById(req.user._id).select("-password");
+  res.status(200).json(user);
+});
 
-    if (!user) {
-      return res.status(404).json({ message: "User Not Found" });
-    }
-
-    user.name = name || user.name;
-    user.profileImageUrl = profileImageUrl || user.profileImageUrl;
-
-    if (email) {
-      const checkEmail = await User.findOne({ email });
-      if (checkEmail) {
-        return res
-          .status(400)
-          .json({ message: "User With This Email Already Exists" });
-      } else {
-        user.email = email;
-      }
-    }
-
-    if (password) {
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, salt);
-    }
-
-    const updatedUser = await user.save();
-
-    res.status(200).json({
-      message: "User Updated Successfully",
-      _id: updatedUser._id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      profileImageUrl: updatedUser.profileImageUrl,
-      token: generateToken(updatedUser._id),
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
+const uploadImage = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new AppError("No File Uploaded", 400);
   }
-};
 
-const updateImage = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select("-password");
+  const result = await cloudinary.uploader.upload(req.file.path, {
+    folder: "expense-tracker",
+  });
 
-    if (!user) {
-      return res.status(404).json({ message: "User Not Found" });
+  return res.status(200).json({ imageUrl: result.secure_url });
+});
+
+const updateUser = asyncHandler(async (req, res) => {
+  const { name, email, password, profileImageUrl } = req.body;
+  const user = await User.findById(req.user._id).select("-password");
+
+  if (!user) {
+    throw new AppError("User Not Found", 404);
+  }
+
+  user.name = name || user.name;
+  user.profileImageUrl = profileImageUrl || user.profileImageUrl;
+
+  if (email) {
+    const checkEmail = await User.findOne({ email });
+    if (checkEmail) {
+      throw new AppError("User With This Email Already Exists", 400);
+    } else {
+      user.email = email;
     }
+  }
 
-    if (!req.file) {
-      return res.status(200).json({ imageUrl: user.profileImageUrl });
-    }
+  if (password) {
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+  }
 
+  const updatedUser = await user.save();
+
+  res.status(200).json({
+    message: "User Updated Successfully",
+    _id: updatedUser._id,
+    name: updatedUser.name,
+    email: updatedUser.email,
+    profileImageUrl: updatedUser.profileImageUrl,
+    token: generateToken(updatedUser._id),
+  });
+});
+
+const updateImage = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password");
+
+  if (!user) {
+    throw new AppError("User Not Found", 404);
+  }
+
+  if (!req.file) {
+    return res.status(200).json({ imageUrl: user.profileImageUrl });
+  }
+
+  const array = user.profileImageUrl.split("/");
+  const image = array[array.length - 1];
+  const imageName = image.split(".")[0];
+
+  await cloudinary.api.delete_resources([`expense-tracker/${imageName}`], {
+    type: "upload",
+    resource_type: "image",
+  });
+
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload(
+      req.file.path,
+      {
+        folder: "expense-tracker",
+      },
+      (err, result) => {
+        if (err) {
+          return reject(err);
+        }
+        res.status(200).json({ imageUrl: result.secure_url });
+        resolve();
+      },
+    );
+  });
+});
+
+const deleteUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    throw new AppError("User Not Found", 404);
+  }
+
+  await Promise.all([
+    Expense.deleteMany({ userId: user._id }),
+    Income.deleteMany({ userId: user._id }),
+  ]);
+
+  if (user.profileImageUrl) {
     const array = user.profileImageUrl.split("/");
     const image = array[array.length - 1];
     const imageName = image.split(".")[0];
@@ -169,61 +185,12 @@ const updateImage = async (req, res) => {
       type: "upload",
       resource_type: "image",
     });
-
-    await cloudinary.uploader.upload(
-      req.file.path,
-      {
-        folder: "expense-tracker",
-      },
-      (err, result) => {
-        if (err) {
-          return res
-            .status(500)
-            .json({ message: "Server Error", error: err.message });
-        } else {
-          return res.status(200).json({ imageUrl: result.secure_url });
-        }
-      },
-    );
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
   }
-};
 
-const deleteUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
+  await user.deleteOne();
 
-    if (!user) {
-      return res.status(404).json({ message: "User Not Found" });
-    }
-
-    await Promise.all([
-      Expense.deleteMany({ userId: user._id }),
-      Income.deleteMany({ userId: user._id }),
-    ]);
-
-    if (user.profileImageUrl) {
-      const array = user.profileImageUrl.split("/");
-      const image = array[array.length - 1];
-      const imageName = image.split(".")[0];
-
-      await cloudinary.api.delete_resources([`expense-tracker/${imageName}`], {
-        type: "upload",
-        resource_type: "image",
-      });
-    }
-
-    await user.deleteOne();
-
-    return res.status(200).json({ message: "User Deleted Successfully" });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Server Error",
-      error: error.message,
-    });
-  }
-};
+  return res.status(200).json({ message: "User Deleted Successfully" });
+});
 
 module.exports = {
   signUpUser,

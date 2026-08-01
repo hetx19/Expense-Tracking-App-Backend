@@ -105,8 +105,7 @@ describe("POST /api/auth/signup", () => {
       .send(buildSignupPayload());
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toBe("Server Error");
-    expect(res.body.error).toBe("Simulated signup error");
+    expect(res.body.message).toBe("Simulated signup error");
   });
 });
 
@@ -167,8 +166,7 @@ describe("POST /api/auth/signin", () => {
     const res = await request(app).post("/api/auth/signin").send(credentials);
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toBe("Server Error");
-    expect(res.body.error).toBe("Simulated signin error");
+    expect(res.body.message).toBe("Simulated signin error");
   });
 });
 
@@ -236,7 +234,7 @@ describe("GET /api/auth/getUser", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toBe("Server Error");
+    expect(res.body.message).toContain("Cast to ObjectId failed");
   });
 
   it("returns 500 if an unexpected database error occurs", async () => {
@@ -251,8 +249,7 @@ describe("GET /api/auth/getUser", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toBe("Server Error");
-    expect(res.body.error).toBe("Simulated DB error");
+    expect(res.body.message).toBe("Simulated DB error");
   });
 });
 
@@ -365,8 +362,7 @@ describe("PUT /api/auth/updateUser", () => {
       .send({ name: "Test" });
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toBe("Server Error");
-    expect(res.body.error).toBe("Simulated update error");
+    expect(res.body.message).toBe("Simulated update error");
   });
 });
 
@@ -411,9 +407,7 @@ describe("DELETE /api/auth/deleteUser", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(500);
-
-    expect(res.body.message).toBe("Server Error");
-    expect(res.body.error).toBe("Simulated delete error");
+    expect(res.body.message).toBe("Simulated delete error");
   });
 
   it("deletes the user and cascades to their expenses, incomes, and Cloudinary image", async () => {

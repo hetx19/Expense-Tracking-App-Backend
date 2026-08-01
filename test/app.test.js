@@ -1,0 +1,52 @@
+const request = require("supertest");
+const app = require("../app");
+const express = require("express");
+const env = require("../config/env");
+
+describe("GET / (Root endpoint)", () => {
+  let consoleLogSpy;
+
+  beforeEach(() => {
+    consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleLogSpy.mockRestore();
+    jest.restoreAllMocks();
+  });
+
+  it("should return 200 and serve index.html", async () => {
+    const res = await request(app).get("/");
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("should handle error when res.sendFile fails", async () => {
+    const sendFileSpy = jest
+      .spyOn(express.response, "sendFile")
+      .mockImplementation(function (filePath, callback) {
+        if (typeof callback === "function") {
+          callback(new Error("File send error"));
+        }
+      });
+
+    const res = await request(app).get("/");
+    expect(res.statusCode).toBe(500);
+    expect(res.text).toBe("File not found");
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "Error sending file:",
+      expect.any(Error)
+    );
+
+    sendFileSpy.mockRestore();
+  });
+
+  it("should fall back to '*' when env.CLIENT_URL is empty", () => {
+    jest.isolateModules(() => {
+      jest.doMock("../config/env", () => ({
+        ...env,
+        CLIENT_URL: "",
+      }));
+      require("../app");
+    });
+  });
+});
