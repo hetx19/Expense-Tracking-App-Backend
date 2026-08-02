@@ -3,7 +3,7 @@ jest.mock("../config/cloudinary", () => ({
   api: { delete_resources: jest.fn() },
 }));
 
-process.env.JWT_SECRET = "testsecretkey";
+const env = require("../config/env");
 
 const request = require("supertest");
 const { MongoMemoryServer } = require("mongodb-memory-server");
@@ -57,7 +57,7 @@ const createUserAndToken = async (overrides = {}) => {
     ...overrides,
   });
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ id: user._id }, env.JWT_SECRET, {
     expiresIn: "2h",
   });
 
@@ -65,7 +65,7 @@ const createUserAndToken = async (overrides = {}) => {
 };
 
 const signToken = (id, options = { expiresIn: "2h" }) =>
-  jwt.sign({ id }, process.env.JWT_SECRET, options);
+  jwt.sign({ id }, env.JWT_SECRET, options);
 
 describe("POST /api/auth/signup", () => {
   it("returns 400 if required fields are missing", async () => {
