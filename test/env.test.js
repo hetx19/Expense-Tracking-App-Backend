@@ -55,10 +55,28 @@ describe("Environment configuration (config/env.js)", () => {
 
   it("should load .env file when NODE_ENV is not test", () => {
     process.env.NODE_ENV = "development";
+    process.env.CLIENT_URL = "http://localhost:5173";
+    process.env.MONGO_URI = "mongodb://localhost:27017/test";
+    process.env.JWT_SECRET = "supersecretkeythatisatleast32characterslong!!";
+    process.env.CLOUDINARY_CLOUD_NAME = "test";
+    process.env.CLOUDINARY_API_KEY = "123456";
+    process.env.CLOUDINARY_API_SECRET = "secret";
+
+    const configSpy = jest.fn();
+    jest.doMock("dotenv", () => ({
+      config: configSpy,
+    }));
+
     let env;
     jest.isolateModules(() => {
       env = require("../config/env");
     });
+
     expect(env).toBeDefined();
+    expect(configSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: expect.stringMatching(/\.env$/),
+      }),
+    );
   });
 });
