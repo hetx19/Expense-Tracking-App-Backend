@@ -77,8 +77,7 @@ describe("Income API", () => {
       });
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Server Error");
-      expect(res.body.error).toBe("Mock DB error");
+      expect(res.body.message).toBe("Mock DB error");
 
       Income.prototype.save = originalSave;
     });
@@ -117,8 +116,7 @@ describe("Income API", () => {
       const res = await request(app).get("/api/income");
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Server Error");
-      expect(res.body.error).toBe("Mock get error");
+      expect(res.body.message).toBe("Mock get error");
 
       Income.find = originalFind;
     });
@@ -178,8 +176,7 @@ describe("Income API", () => {
       const res = await request(app).delete(`/api/income/${fakeId}`);
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Server Error");
-      expect(res.body.error).toBe("Mock delete error");
+      expect(res.body.message).toBe("Mock delete error");
 
       Income.findOneAndDelete = originalFindOneAndDelete;
     });
@@ -214,8 +211,7 @@ describe("Income API", () => {
       const res = await request(app).get("/api/income/download");
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Server Error");
-      expect(res.body.error).toBe("Mock Excel error");
+      expect(res.body.message).toBe("Mock Excel error");
 
       Income.find = originalFind;
     });

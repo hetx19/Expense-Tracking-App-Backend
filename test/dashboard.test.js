@@ -85,7 +85,43 @@ describe("GET /api/dashboard", () => {
     const response = await request(app).get("/api/dashboard");
 
     expect(response.status).toBe(500);
-    expect(response.body).toHaveProperty("message", "Server Error");
-    expect(response.body).toHaveProperty("error");
+    expect(response.body).toHaveProperty("message", "Database error");
+  });
+
+  it("should return zero totals when user has no transactions", async () => {
+    Income.aggregate.mockResolvedValue([]);
+    Expense.aggregate.mockResolvedValue([]);
+
+    Income.find.mockImplementation((query) => {
+      if (query.date) {
+        return { sort: () => Promise.resolve([]) };
+      }
+      return {
+        sort: () => ({
+          limit: () => Promise.resolve([]),
+        }),
+      };
+    });
+
+    Expense.find.mockImplementation((query) => {
+      if (query.date) {
+        return { sort: () => Promise.resolve([]) };
+      }
+      return {
+        sort: () => ({
+          limit: () => Promise.resolve([]),
+        }),
+      };
+    });
+
+    const response = await request(app).get("/api/dashboard");
+
+    expect(response.status).toBe(200);
+    expect(response.body.totalBalance).toBe(0);
+    expect(response.body.totalIncome).toBe(0);
+    expect(response.body.totalExpenses).toBe(0);
+    expect(response.body.last60DaysIncome.total).toBe(0);
+    expect(response.body.last30DaysExpenses.total).toBe(0);
+    expect(response.body.recentTransactions).toEqual([]);
   });
 });

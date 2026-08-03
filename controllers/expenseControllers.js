@@ -1,93 +1,76 @@
 const xlsx = require("xlsx");
 const Expense = require("../models/Expense");
+const AppError = require("../utils/AppError");
+const asyncHandler = require("../utils/asyncHandler");
 
-const addExpense = async (req, res) => {
+const addExpense = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  try {
-    const { icon, category, amount, date } = req.body;
+  const { icon, category, amount, date } = req.body;
 
-    if (!category || !amount || !date) {
-      return res.status(400).json({ message: "Missing Required Fields" });
-    }
-
-    const newExpense = new Expense({
-      userId,
-      icon,
-      category,
-      amount,
-      date: new Date(date),
-    });
-
-    await newExpense.save();
-
-    res.status(200).json(newExpense);
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
+  if (!category || !amount || !date) {
+    throw new AppError("Missing Required Fields", 400);
   }
-};
 
-const getAllExpense = async (req, res) => {
+  const newExpense = new Expense({
+    userId,
+    icon,
+    category,
+    amount,
+    date: new Date(date),
+  });
+
+  await newExpense.save();
+
+  res.status(200).json(newExpense);
+});
+
+const getAllExpense = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  try {
-    const expense = await Expense.find({ userId }).sort({ date: -1 });
+  const expense = await Expense.find({ userId }).sort({ date: -1 });
 
-    res.json(expense);
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
+  res.json(expense);
+});
+
+const deleteExpense = asyncHandler(async (req, res) => {
+  const deletedExpense = await Expense.findOneAndDelete({
+    _id: req.params.id,
+    userId: req.user._id,
+  });
+
+  if (!deletedExpense) {
+    throw new AppError("Expense Not Found", 404);
   }
-};
 
-const deleteExpense = async (req, res) => {
-  try {
-    const deletedExpense = await Expense.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user._id,
-    });
+  res.json({
+    message: "Expense Deleted Successfully",
+    deletedExpense,
+  });
+});
 
-    if (!deletedExpense) {
-      return res.status(404).json({ message: "Expense Not Found" });
-    }
-
-    res.json({
-      message: "Expense Deleted Successfully",
-      deletedExpense,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Server Error",
-      error: error.message,
-    });
-  }
-};
-
-const downloadExpenseExcel = async (req, res) => {
+const downloadExpenseExcel = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  try {
-    const expense = await Expense.find({ userId }).sort({ date: -1 });
+  const expense = await Expense.find({ userId }).sort({ date: -1 });
 
-    const data = expense.map((item) => ({
-      Category: item.category,
-      Amount: item.amount,
-      Date: item.date,
-    }));
+  const data = expense.map((item) => ({
+    Category: item.category,
+    Amount: item.amount,
+    Date: item.date,
+  }));
 
-    const wb = xlsx.utils.book_new();
-    const ws = xlsx.utils.json_to_sheet(data);
-    xlsx.utils.book_append_sheet(wb, ws, "Expense");
-    const buffer = xlsx.write(wb, { bookType: "xlsx", type: "buffer" });
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=expense-details.xlsx"
-    );
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.status(200).send(buffer);
-  } catch (error) {
-    res.status(500).json({ message: "Server Error", error: error.message });
-  }
-};
+  const wb = xlsx.utils.book_new();
+  const ws = xlsx.utils.json_to_sheet(data);
+  xlsx.utils.book_append_sheet(wb, ws, "Expense");
+  const buffer = xlsx.write(wb, { bookType: "xlsx", type: "buffer" });
+  res.setHeader(
+    "Content-Disposition",
+    "attachment; filename=expense-details.xlsx"
+  );
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+  res.status(200).send(buffer);
+});
 
 module.exports = {
   addExpense,

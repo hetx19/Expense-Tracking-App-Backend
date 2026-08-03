@@ -76,8 +76,7 @@ describe("Expense API", () => {
       });
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Server Error");
-      expect(res.body.error).toBe("Mock DB error");
+      expect(res.body.message).toBe("Mock DB error");
 
       Expense.prototype.save = originalSave;
     });
@@ -116,8 +115,7 @@ describe("Expense API", () => {
       const res = await request(app).get("/api/expense");
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Server Error");
-      expect(res.body.error).toBe("Mock get error");
+      expect(res.body.message).toBe("Mock get error");
 
       Expense.find = originalFind;
     });
@@ -178,8 +176,7 @@ describe("Expense API", () => {
       const res = await request(app).delete(`/api/expense/${fakeId}`);
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Server Error");
-      expect(res.body.error).toBe("Mock delete error");
+      expect(res.body.message).toBe("Mock delete error");
 
       Expense.findOneAndDelete = originalFindOneAndDelete;
     });
@@ -214,8 +211,7 @@ describe("Expense API", () => {
       const res = await request(app).get("/api/expense/download");
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Server Error");
-      expect(res.body.error).toBe("Mock Excel error");
+      expect(res.body.message).toBe("Mock Excel error");
 
       Expense.find = originalFind;
     });

@@ -139,7 +139,7 @@ describe("POST /api/auth/upload-image", () => {
       .attach("image", testImagePath);
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toBe("Server Error");
+    expect(res.body.message).toBe("Cloudinary upload failed");
   });
 });
 
@@ -152,11 +152,16 @@ describe("POST /api/auth/update-image", () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
+    const next = jest.fn();
 
-    await uploadImage(req, res);
+    await uploadImage(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "No File Uploaded" });
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "No File Uploaded",
+        statusCode: 400,
+      }),
+    );
   });
 
   it("should upload image successfully", async () => {
@@ -173,8 +178,9 @@ describe("POST /api/auth/update-image", () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
+    const next = jest.fn();
 
-    await uploadImage(req, res);
+    await uploadImage(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ imageUrl: mockResult.secure_url });
@@ -196,14 +202,15 @@ describe("POST /api/auth/update-image", () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
+    const next = jest.fn();
 
-    await uploadImage(req, res);
+    await uploadImage(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({
-      message: "Server Error",
-      error: "Upload failed",
-    });
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Upload failed",
+      }),
+    );
   });
 });
 
@@ -228,7 +235,9 @@ describe("PUT /api/auth/update-image", () => {
       json: jest.fn(),
     };
 
-    await updateImage(req, res);
+    const next = jest.fn();
+
+    await updateImage(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
@@ -257,14 +266,15 @@ describe("PUT /api/auth/update-image", () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
+    const next = jest.fn();
 
-    await updateImage(req, res);
+    await updateImage(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({
-      message: "Server Error",
-      error: "Upload callback failed",
-    });
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Upload callback failed",
+      }),
+    );
   });
 
   it("should update image successfully when file is provided", async () => {
@@ -294,7 +304,9 @@ describe("PUT /api/auth/update-image", () => {
       json: jest.fn(),
     };
 
-    await updateImage(req, res);
+    const next = jest.fn();
+
+    await updateImage(req, res, next);
 
     expect(mockCloudinary.api.delete_resources).toHaveBeenCalledWith(
       ["expense-tracker/profile"],
@@ -323,11 +335,16 @@ describe("PUT /api/auth/update-image", () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
+    const next = jest.fn();
 
-    await updateImage(req, res);
+    await updateImage(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({ message: "User Not Found" });
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "User Not Found",
+        statusCode: 404,
+      }),
+    );
   });
 
   it("should handle server error during image update", async () => {
@@ -345,14 +362,15 @@ describe("PUT /api/auth/update-image", () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
+    const next = jest.fn();
 
-    await updateImage(req, res);
+    await updateImage(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({
-      message: "Server Error",
-      error: "Database error",
-    });
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Database error",
+      }),
+    );
 
     User.findById.mockRestore();
   });
