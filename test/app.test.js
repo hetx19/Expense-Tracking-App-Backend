@@ -40,13 +40,20 @@ describe("GET / (Root endpoint)", () => {
     sendFileSpy.mockRestore();
   });
 
-  it("should fall back to '*' when env.CLIENT_URL is empty", () => {
+  it("should include security headers from Helmet", async () => {
+    const res = await request(app).get("/");
+    expect(res.headers["x-content-type-options"]).toBe("nosniff");
+    expect(res.headers["x-frame-options"]).toBeDefined();
+  });
+
+  it("should configure CORS with env.CLIENT_URL directly", () => {
     jest.isolateModules(() => {
       jest.doMock("../config/env", () => ({
         ...env,
-        CLIENT_URL: "",
+        CLIENT_URL: "http://localhost:5173",
       }));
-      require("../app");
+      const testedApp = require("../app");
+      expect(testedApp).toBeDefined();
     });
   });
 });

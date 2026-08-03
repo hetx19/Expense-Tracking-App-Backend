@@ -15,6 +15,7 @@ const Income = require("../models/Income");
 const cloudinary = require("../config/cloudinary");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { authLimiter } = require("../middleware/rateLimiters");
 
 jest.setTimeout(30000);
 
@@ -28,6 +29,13 @@ beforeAll(async () => {
 afterAll(async () => {
   await mongoose.disconnect();
   await mongoServer.stop();
+});
+
+beforeEach(() => {
+  if (authLimiter.resetKey) {
+    authLimiter.resetKey("::ffff:127.0.0.1");
+    authLimiter.resetKey("127.0.0.1");
+  }
 });
 
 afterEach(async () => {
