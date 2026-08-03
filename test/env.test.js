@@ -23,19 +23,28 @@ describe("Environment configuration (config/env.js)", () => {
   });
 
   it("should exit process when environment configuration is invalid", () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-    const processExitSpy = jest.spyOn(process, "exit").mockImplementation(() => {});
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const processExitSpy = jest
+      .spyOn(process, "exit")
+      .mockImplementation((code) => {
+        throw new Error(`process.exit: ${code}`);
+      });
+
     const dotenvSpy = jest.spyOn(dotenv, "config").mockImplementation(() => {});
 
     process.env.JWT_SECRET = "invalid-short-secret";
 
-    jest.isolateModules(() => {
-      require("../config/env");
-    });
+    expect(() => {
+      jest.isolateModules(() => {
+        require("../config/env");
+      });
+    }).toThrow("process.exit: 1");
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       "❌ Invalid environment configuration:",
-      expect.any(Object)
+      expect.any(Object),
     );
     expect(processExitSpy).toHaveBeenCalledWith(1);
 
