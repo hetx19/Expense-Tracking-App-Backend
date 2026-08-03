@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const helmet = require("helmet");
+const { globalLimiter } = require("./middleware/rateLimiters");
 
 // Routes
 const authRoutes = require("./routes/authRoutes");
@@ -12,10 +14,12 @@ const env = require("./config/env");
 
 const app = express();
 
+app.use(helmet());
+app.use(globalLimiter);
 app.use(express.json());
 app.use(
   cors({
-    origin: env.CLIENT_URL || "*",
+    origin: env.CLIENT_URL,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),

@@ -1,6 +1,7 @@
 const express = require("express");
 const protect = require("../middleware/auth");
 const upload = require("../middleware/upload");
+const { authLimiter } = require("../middleware/rateLimiters");
 const {
   signUpUser,
   signInUser,
@@ -13,8 +14,8 @@ const {
 
 const router = express.Router();
 
-router.post("/signup", signUpUser);
-router.post("/signin", signInUser);
+router.post("/signup", authLimiter, signUpUser);
+router.post("/signin", authLimiter, signInUser);
 router.get("/getUser", protect, getUser);
 router.put("/updateUser", protect, updateUser);
 router.delete("/deleteUser", protect, deleteUser);
