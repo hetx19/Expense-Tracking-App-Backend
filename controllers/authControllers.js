@@ -8,6 +8,9 @@ const env = require("../config/env");
 const AppError = require("../utils/AppError");
 const asyncHandler = require("../utils/asyncHandler");
 
+const DUMMY_HASH =
+  "$2b$10$e8I6E.dC2.8mJ3dK.6kQee60k1/G3uJ3X0V5N7/m4l2G3K1.X7p2W";
+
 const generateToken = (id) => {
   return jwt.sign({ id }, env.JWT_SECRET, { expiresIn: "2h" });
 };
@@ -51,14 +54,11 @@ const signInUser = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ email });
 
-  if (!user) {
-    throw new AppError("No User Found", 400);
-  }
+  const hashToCompare = user ? user.password : DUMMY_HASH;
+  const isMatched = await bcrypt.compare(password, hashToCompare);
 
-  const isMatched = await bcrypt.compare(password, user.password);
-
-  if (!isMatched) {
-    throw new AppError("Invalid Credentials", 401);
+  if (!user || !isMatched) {
+    throw new AppError("Invalid email or password", 401);
   }
 
   res.status(200).json({
