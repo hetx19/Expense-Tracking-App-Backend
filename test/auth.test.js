@@ -140,13 +140,13 @@ describe("POST /api/auth/signin", () => {
     expect(res.body.message).toBe("Missing Required Fields");
   });
 
-  it("returns 400 if no user exists for the given email", async () => {
+  it("returns 401 if no user exists for the given email", async () => {
     const res = await request(app)
       .post("/api/auth/signin")
       .send({ email: "nouser@example.com", password: "whatever123" });
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("No User Found");
+    expect(res.statusCode).toBe(401);
+    expect(res.body.message).toBe("Invalid email or password");
   });
 
   it("returns 401 for an incorrect password", async () => {
@@ -155,7 +155,22 @@ describe("POST /api/auth/signin", () => {
       .send({ email: credentials.email, password: "wrongpassword" });
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Invalid Credentials");
+    expect(res.body.message).toBe("Invalid email or password");
+  });
+
+  it("returns identical status and body for non-existent user and wrong password failure cases", async () => {
+    const resNoUser = await request(app)
+      .post("/api/auth/signin")
+      .send({ email: "nouser@example.com", password: "whatever123" });
+
+    const resWrongPassword = await request(app)
+      .post("/api/auth/signin")
+      .send({ email: credentials.email, password: "wrongpassword" });
+
+    expect(resNoUser.statusCode).toBe(401);
+    expect(resWrongPassword.statusCode).toBe(401);
+    expect(resNoUser.statusCode).toBe(resWrongPassword.statusCode);
+    expect(resNoUser.body).toEqual(resWrongPassword.body);
   });
 
   it("returns 200 and a token for valid credentials", async () => {
