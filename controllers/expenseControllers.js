@@ -7,10 +7,6 @@ const addExpense = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const { icon, category, amount, date } = req.body;
 
-  if (!category || !amount || !date) {
-    throw new AppError("Missing Required Fields", 400);
-  }
-
   const newExpense = new Expense({
     userId,
     icon,
@@ -63,11 +59,11 @@ const downloadExpenseExcel = asyncHandler(async (req, res) => {
   const buffer = xlsx.write(wb, { bookType: "xlsx", type: "buffer" });
   res.setHeader(
     "Content-Disposition",
-    "attachment; filename=expense-details.xlsx"
+    "attachment; filename=expense-details.xlsx",
   );
   res.setHeader(
     "Content-Type",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   );
   res.status(200).send(buffer);
 });

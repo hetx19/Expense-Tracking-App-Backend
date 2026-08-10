@@ -63,6 +63,46 @@ describe("Income API", () => {
       expect(res.body.message).toBe("Missing Required Fields");
     });
 
+    it("should fail when amount is negative", async () => {
+      const res = await request(app).post("/api/income/add").send({
+        icon: "💰",
+        source: "Freelance",
+        amount: -100,
+        date: "2025-07-20",
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toBe("Amount must be a positive number");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "amount",
+            message: "Amount must be a positive number",
+          }),
+        ]),
+      );
+    });
+
+    it("should fail when date format is invalid", async () => {
+      const res = await request(app).post("/api/income/add").send({
+        icon: "💰",
+        source: "Freelance",
+        amount: 2000,
+        date: "invalid-date",
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toBe("Invalid date format");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "date",
+            message: "Invalid date format",
+          }),
+        ]),
+      );
+    });
+
     it("should return 500 if saving income throws an error", async () => {
       const originalSave = Income.prototype.save;
       Income.prototype.save = jest

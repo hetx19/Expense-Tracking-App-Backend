@@ -7,11 +7,7 @@ const addIncome = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const { icon, source, amount, date } = req.body;
 
-  if (!source || !amount || !date) {
-    throw new AppError("Missing Required Fields", 400);
-  }
-
-  const newIcome = new Income({
+  const newIncome = new Income({
     userId,
     icon,
     source,
@@ -19,9 +15,9 @@ const addIncome = asyncHandler(async (req, res) => {
     date: new Date(date),
   });
 
-  await newIcome.save();
+  await newIncome.save();
 
-  res.status(200).json(newIcome);
+  res.status(200).json(newIncome);
 });
 
 const getAllIncome = asyncHandler(async (req, res) => {

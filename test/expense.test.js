@@ -62,6 +62,46 @@ describe("Expense API", () => {
       expect(res.body.message).toBe("Missing Required Fields");
     });
 
+    it("should fail when amount is negative", async () => {
+      const res = await request(app).post("/api/expense/add").send({
+        icon: "🍕",
+        category: "Food",
+        amount: -20,
+        date: "2025-07-20",
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toBe("Amount must be a positive number");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "amount",
+            message: "Amount must be a positive number",
+          }),
+        ])
+      );
+    });
+
+    it("should fail when date format is invalid", async () => {
+      const res = await request(app).post("/api/expense/add").send({
+        icon: "🍕",
+        category: "Food",
+        amount: 20,
+        date: "invalid-date",
+      });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.message).toBe("Invalid date format");
+      expect(res.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "date",
+            message: "Invalid date format",
+          }),
+        ])
+      );
+    });
+
     it("should return 500 if saving expense throws an error", async () => {
       const originalSave = Expense.prototype.save;
       Expense.prototype.save = jest
