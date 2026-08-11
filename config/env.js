@@ -23,9 +23,10 @@ const envSchema = z.object({
 const parseResult = envSchema.safeParse(process.env);
 
 if (!parseResult.success) {
-  console.error(
-    "❌ Invalid environment configuration:",
-    parseResult.error.format(),
+  const logger = require("../utils/logger");
+  logger.error(
+    { err: parseResult.error.format() },
+    "❌ Invalid environment configuration"
   );
   process.exit(1);
 }

@@ -1,27 +1,28 @@
 const errorHandler = require("../middleware/errorHandler");
 const env = require("../config/env");
+const logger = require("../utils/logger");
 
 describe("errorHandler Middleware", () => {
   let req;
   let res;
   let next;
-  let consoleErrorSpy;
+  let loggerErrorSpy;
   let originalNodeEnv;
 
   beforeEach(() => {
-    req = {};
+    req = { id: "test-req-id-123", originalUrl: "/api/test", method: "GET" };
     res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
     };
     next = jest.fn();
-    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    loggerErrorSpy = jest.spyOn(logger, "error").mockImplementation(() => {});
     originalNodeEnv = env.NODE_ENV;
   });
 
   afterEach(() => {
     env.NODE_ENV = originalNodeEnv;
-    consoleErrorSpy.mockRestore();
+    loggerErrorSpy.mockRestore();
   });
 
   it("should return detailed error response in test/development environment", () => {
@@ -39,6 +40,7 @@ describe("errorHandler Middleware", () => {
       message: "Test error message",
       stack: expect.any(String),
       details: { field: "email" },
+      requestId: "test-req-id-123",
     });
   });
 
@@ -57,6 +59,7 @@ describe("errorHandler Middleware", () => {
       status: "fail",
       message: "Operational issue",
       details: { issue: "Invalid payload" },
+      requestId: "test-req-id-123",
     });
     expect(res.json.mock.calls[0][0].stack).toBeUndefined();
   });
@@ -74,6 +77,7 @@ describe("errorHandler Middleware", () => {
     expect(res.json).toHaveBeenCalledWith({
       status: "fail",
       message: "Operational issue without details",
+      requestId: "test-req-id-123",
     });
   });
 
@@ -83,7 +87,45 @@ describe("errorHandler Middleware", () => {
 
     errorHandler(error, req, res, next);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith("ERROR 💥", error);
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
+      {
+        err: error,
+        reqId: "test-req-id-123",
+        url: "/api/test",
+        method: "GET",
+      },
+      "Unhandled crash"
+    );
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({
+      status: "error",
+      message: "Something went very wrong!",
+      requestId: "test-req-id-123",
+    });
+  });
+
+  it("should handle 4xx error that is not operational in production environment", () => {
+    env.NODE_ENV = "production";
+    const error = new Error("Non-operational 400 error");
+    error.statusCode = 400;
+    error.isOperational = false;
+
+    errorHandler(error, req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({
+      status: "error",
+      message: "Something went very wrong!",
+      requestId: "test-req-id-123",
+    });
+  });
+
+  it("should handle missing req object gracefully", () => {
+    env.NODE_ENV = "production";
+    const error = new Error("No req error");
+
+    errorHandler(error, undefined, res, next);
+
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
       status: "error",

@@ -23,9 +23,7 @@ describe("Environment configuration (config/env.js)", () => {
   });
 
   it("should exit process when environment configuration is invalid", () => {
-    const consoleErrorSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+    let loggerErrorSpy;
     const processExitSpy = jest
       .spyOn(process, "exit")
       .mockImplementation((code) => {
@@ -38,17 +36,21 @@ describe("Environment configuration (config/env.js)", () => {
 
     expect(() => {
       jest.isolateModules(() => {
+        const logger = require("../utils/logger");
+        loggerErrorSpy = jest
+          .spyOn(logger, "error")
+          .mockImplementation(() => {});
         require("../config/env");
       });
     }).toThrow("process.exit: 1");
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "❌ Invalid environment configuration:",
-      expect.any(Object),
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
+      { err: expect.any(Object) },
+      "❌ Invalid environment configuration"
     );
     expect(processExitSpy).toHaveBeenCalledWith(1);
 
-    consoleErrorSpy.mockRestore();
+    loggerErrorSpy.mockRestore();
     processExitSpy.mockRestore();
     dotenvSpy.mockRestore();
   });

@@ -179,10 +179,12 @@ describe("POST /api/auth/signin", () => {
   it("returns identical status and body for non-existent user and wrong password failure cases", async () => {
     const resNoUser = await request(app)
       .post("/api/auth/signin")
+      .set("x-request-id", "test-correlation-id")
       .send({ email: "nouser@example.com", password: "whatever123" });
 
     const resWrongPassword = await request(app)
       .post("/api/auth/signin")
+      .set("x-request-id", "test-correlation-id")
       .send({ email: credentials.email, password: "wrongpassword" });
 
     expect(resNoUser.statusCode).toBe(401);
