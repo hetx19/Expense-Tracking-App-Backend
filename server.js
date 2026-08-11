@@ -1,6 +1,10 @@
+const logger = require("./utils/logger");
+
 process.on("uncaughtException", (err) => {
-  console.error("UNCAUGHT EXCEPTION! 💥 Shutting down...");
-  console.error(err.name, err.message, err.stack);
+  logger.error(
+    { err },
+    "UNCAUGHT EXCEPTION! Shutting down..."
+  );
   process.exit(1);
 });
 
@@ -12,12 +16,14 @@ connectDb();
 
 const port = env.PORT;
 const server = app.listen(port, () => {
-  console.log(`Server is successfully listing at http://localhost:${port}`);
+  logger.info(`Server is successfully running at http://localhost:${port}`);
 });
 
 process.on("unhandledRejection", (err) => {
-  console.error("UNHANDLED REJECTION! 💥 Shutting down...");
-  console.error(err.name, err.message);
+  logger.error(
+    { err },
+    "UNHANDLED REJECTION! Shutting down..."
+  );
   server.close(() => {
     process.exit(1);
   });

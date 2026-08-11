@@ -12,7 +12,9 @@ const ExpenseSchema = new mongoose.Schema(
     amount: { type: Number, required: true },
     date: { type: Date, default: Date.now() },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+
+ExpenseSchema.index({ userId: 1, date: -1 });
 
 module.exports = mongoose.model("Expense", ExpenseSchema);

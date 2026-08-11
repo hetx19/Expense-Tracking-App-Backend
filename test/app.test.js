@@ -2,16 +2,17 @@ const request = require("supertest");
 const app = require("../app");
 const express = require("express");
 const env = require("../config/env");
+const logger = require("../utils/logger");
 
 describe("GET / (Root endpoint)", () => {
-  let consoleLogSpy;
+  let loggerErrorSpy;
 
   beforeEach(() => {
-    consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    loggerErrorSpy = jest.spyOn(logger, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
-    consoleLogSpy.mockRestore();
+    loggerErrorSpy.mockRestore();
     jest.restoreAllMocks();
   });
 
@@ -32,9 +33,9 @@ describe("GET / (Root endpoint)", () => {
     const res = await request(app).get("/");
     expect(res.statusCode).toBe(500);
     expect(res.text).toBe("File not found");
-    expect(consoleLogSpy).toHaveBeenCalledWith(
-      "Error sending file:",
-      expect.any(Error)
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
+      { err: expect.any(Error) },
+      "Error sending file"
     );
 
     sendFileSpy.mockRestore();

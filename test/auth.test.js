@@ -83,6 +83,15 @@ describe("POST /api/auth/signup", () => {
     expect(res.body.message).toBe("Missing Required Fields");
   });
 
+  it("returns 400 for invalid email format", async () => {
+    const payload = buildSignupPayload({ email: "invalid-email" });
+
+    const res = await request(app).post("/api/auth/signup").send(payload);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid email format");
+  });
+
   it("creates a new user and returns a token", async () => {
     const payload = buildSignupPayload();
 
@@ -140,6 +149,15 @@ describe("POST /api/auth/signin", () => {
     expect(res.body.message).toBe("Missing Required Fields");
   });
 
+  it("returns 400 for invalid email format", async () => {
+    const res = await request(app)
+      .post("/api/auth/signin")
+      .send({ email: "invalid-email", password: "password123" });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid email format");
+  });
+
   it("returns 401 if no user exists for the given email", async () => {
     const res = await request(app)
       .post("/api/auth/signin")
@@ -161,10 +179,12 @@ describe("POST /api/auth/signin", () => {
   it("returns identical status and body for non-existent user and wrong password failure cases", async () => {
     const resNoUser = await request(app)
       .post("/api/auth/signin")
+      .set("x-request-id", "test-correlation-id")
       .send({ email: "nouser@example.com", password: "whatever123" });
 
     const resWrongPassword = await request(app)
       .post("/api/auth/signin")
+      .set("x-request-id", "test-correlation-id")
       .send({ email: credentials.email, password: "wrongpassword" });
 
     expect(resNoUser.statusCode).toBe(401);
@@ -294,6 +314,18 @@ describe("PUT /api/auth/updateUser", () => {
 
     expect(res.statusCode).toBe(401);
     expect(res.body.message).toBe("Not authorized, token failed");
+  });
+
+  it("returns 400 for invalid email format during update", async () => {
+    const { token } = await createUserAndToken();
+
+    const res = await request(app)
+      .put("/api/auth/updateUser")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ email: "invalid-email" });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toBe("Invalid email format");
   });
 
   it("updates name and profileImageUrl", async () => {

@@ -18,10 +18,6 @@ const generateToken = (id) => {
 const signUpUser = asyncHandler(async (req, res) => {
   const { name, email, password, profileImageUrl } = req.body;
 
-  if (!name || !email || !password) {
-    throw new AppError("Missing Required Fields", 400);
-  }
-
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
@@ -47,10 +43,6 @@ const signUpUser = asyncHandler(async (req, res) => {
 
 const signInUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-
-  if (!email || !password) {
-    throw new AppError("Missing Required Fields", 400);
-  }
 
   const user = await User.findOne({ email });
 
