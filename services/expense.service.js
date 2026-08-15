@@ -1,42 +1,43 @@
-const xlsx = require("xlsx");
 const expenseRepository = require("../repositories/expense.repository");
-const AppError = require("../utils/AppError");
+const transactionService = require("./transaction.service");
 
 const addExpense = async ({ userId, icon, category, amount, date }) => {
-  return await expenseRepository.create({
+  return await transactionService.addTransaction(expenseRepository, {
     userId,
     icon,
     category,
     amount,
-    date: new Date(date),
+    date,
   });
 };
 
 const getAllExpenses = async (userId) => {
-  return await expenseRepository.findByUser(userId);
+  return await transactionService.getTransactionsByUser(
+    expenseRepository,
+    userId,
+  );
 };
 
 const deleteExpense = async (id, userId) => {
-  const deletedExpense = await expenseRepository.deleteOwned(id, userId);
-  if (!deletedExpense) {
-    throw new AppError("Expense Not Found", 404);
-  }
-  return deletedExpense;
+  return await transactionService.deleteTransaction(
+    expenseRepository,
+    id,
+    userId,
+    "Expense",
+  );
 };
 
 const generateExpenseExcel = async (userId) => {
-  const expense = await expenseRepository.findByUser(userId);
-
-  const data = expense.map((item) => ({
-    Category: item.category,
-    Amount: item.amount,
-    Date: item.date,
-  }));
-
-  const wb = xlsx.utils.book_new();
-  const ws = xlsx.utils.json_to_sheet(data);
-  xlsx.utils.book_append_sheet(wb, ws, "Expense");
-  return xlsx.write(wb, { bookType: "xlsx", type: "buffer" });
+  return await transactionService.generateTransactionExcel(
+    expenseRepository,
+    userId,
+    "Expense",
+    (item) => ({
+      Category: item.category,
+      Amount: item.amount,
+      Date: item.date,
+    }),
+  );
 };
 
 module.exports = {
