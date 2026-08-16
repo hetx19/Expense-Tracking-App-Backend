@@ -97,4 +97,15 @@ describe("Expense Service Unit Tests", () => {
       expect(buffer.length).toBeGreaterThan(0);
     });
   });
+
+  describe("deleteAllExpensesByUser", () => {
+    it("should call repository deleteByUser", async () => {
+      expenseRepository.deleteByUser.mockResolvedValue({ deletedCount: 5 });
+
+      const result = await expenseService.deleteAllExpensesByUser("user123");
+
+      expect(expenseRepository.deleteByUser).toHaveBeenCalledWith("user123");
+      expect(result).toEqual({ deletedCount: 5 });
+    });
+  });
 });

@@ -43,17 +43,17 @@ describe("Income Service Unit Tests", () => {
 
   describe("getAllIncome", () => {
     it("should return income for a given user", async () => {
-      const mockIncomes = [
+      const mockIncomeList = [
         { _id: "inc1", source: "Salary", amount: 5000 },
-        { _id: "inc2", source: "Freelance", amount: 1200 },
+        { _id: "inc2", source: "Freelance", amount: 500 },
       ];
 
-      incomeRepository.findByUser.mockResolvedValue(mockIncomes);
+      incomeRepository.findByUser.mockResolvedValue(mockIncomeList);
 
       const result = await incomeService.getAllIncome("user123");
 
       expect(incomeRepository.findByUser).toHaveBeenCalledWith("user123");
-      expect(result).toEqual(mockIncomes);
+      expect(result).toEqual(mockIncomeList);
     });
   });
 
@@ -64,7 +64,10 @@ describe("Income Service Unit Tests", () => {
 
       const result = await incomeService.deleteIncome("inc1", "user123");
 
-      expect(incomeRepository.deleteOwned).toHaveBeenCalledWith("inc1", "user123");
+      expect(incomeRepository.deleteOwned).toHaveBeenCalledWith(
+        "inc1",
+        "user123",
+      );
       expect(result).toEqual(mockDeleted);
     });
 
@@ -72,29 +75,40 @@ describe("Income Service Unit Tests", () => {
       incomeRepository.deleteOwned.mockResolvedValue(null);
 
       await expect(
-        incomeService.deleteIncome("nonexistent", "user123")
+        incomeService.deleteIncome("nonexistent", "user123"),
       ).rejects.toThrow(new AppError("Income Not Found", 404));
 
       expect(incomeRepository.deleteOwned).toHaveBeenCalledWith(
         "nonexistent",
-        "user123"
+        "user123",
       );
     });
   });
 
   describe("generateIncomeExcel", () => {
     it("should generate and return Excel buffer for user income", async () => {
-      const mockIncomes = [
-        { source: "Salary", amount: 5000, date: new Date("2025-07-20") },
+      const mockIncomeList = [
+        { source: "Investments", amount: 200, date: new Date("2025-07-20") },
       ];
 
-      incomeRepository.findByUser.mockResolvedValue(mockIncomes);
+      incomeRepository.findByUser.mockResolvedValue(mockIncomeList);
 
       const buffer = await incomeService.generateIncomeExcel("user123");
 
       expect(incomeRepository.findByUser).toHaveBeenCalledWith("user123");
       expect(Buffer.isBuffer(buffer)).toBe(true);
       expect(buffer.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("deleteAllIncomeByUser", () => {
+    it("should call repository deleteByUser", async () => {
+      incomeRepository.deleteByUser.mockResolvedValue({ deletedCount: 3 });
+
+      const result = await incomeService.deleteAllIncomeByUser("user123");
+
+      expect(incomeRepository.deleteByUser).toHaveBeenCalledWith("user123");
+      expect(result).toEqual({ deletedCount: 3 });
     });
   });
 });

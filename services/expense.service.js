@@ -40,9 +40,14 @@ const generateExpenseExcel = async (userId) => {
   );
 };
 
+const deleteAllExpensesByUser = async (userId) => {
+  return await expenseRepository.deleteByUser(userId);
+};
+
 module.exports = {
   addExpense,
   getAllExpenses,
   deleteExpense,
   generateExpenseExcel,
+  deleteAllExpensesByUser,
 };
