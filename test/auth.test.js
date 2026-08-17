@@ -80,7 +80,8 @@ describe("POST /api/auth/signup", () => {
     const res = await request(app).post("/api/auth/signup").send({});
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Missing Required Fields");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Missing Required Fields");
   });
 
   it("returns 400 for invalid email format", async () => {
@@ -89,7 +90,8 @@ describe("POST /api/auth/signup", () => {
     const res = await request(app).post("/api/auth/signup").send(payload);
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Invalid email format");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Invalid email format");
   });
 
   it("creates a new user and returns a token", async () => {
@@ -98,8 +100,9 @@ describe("POST /api/auth/signup", () => {
     const res = await request(app).post("/api/auth/signup").send(payload);
 
     expect(res.statusCode).toBe(201);
-    expect(res.body).toHaveProperty("token");
-    expect(res.body.user.email).toBe(payload.email);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveProperty("token");
+    expect(res.body.data.user.email).toBe(payload.email);
   });
 
   it("rejects duplicate registration for the same email", async () => {
@@ -109,7 +112,8 @@ describe("POST /api/auth/signup", () => {
     const res = await request(app).post("/api/auth/signup").send(payload);
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("User With This Email Already Exists");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("User With This Email Already Exists");
   });
 
   it("returns 500 if an unexpected error occurs", async () => {
@@ -122,7 +126,8 @@ describe("POST /api/auth/signup", () => {
       .send(buildSignupPayload());
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toBe("Simulated signup error");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Simulated signup error");
   });
 });
 
@@ -146,7 +151,8 @@ describe("POST /api/auth/signin", () => {
     const res = await request(app).post("/api/auth/signin").send({});
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Missing Required Fields");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Missing Required Fields");
   });
 
   it("returns 400 for invalid email format", async () => {
@@ -155,7 +161,8 @@ describe("POST /api/auth/signin", () => {
       .send({ email: "invalid-email", password: "password123" });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Invalid email format");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Invalid email format");
   });
 
   it("returns 401 if no user exists for the given email", async () => {
@@ -164,7 +171,8 @@ describe("POST /api/auth/signin", () => {
       .send({ email: "nouser@example.com", password: "whatever123" });
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Invalid email or password");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Invalid email or password");
   });
 
   it("returns 401 for an incorrect password", async () => {
@@ -173,7 +181,8 @@ describe("POST /api/auth/signin", () => {
       .send({ email: credentials.email, password: "wrongpassword" });
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Invalid email or password");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Invalid email or password");
   });
 
   it("returns identical status and body for non-existent user and wrong password failure cases", async () => {
@@ -197,8 +206,9 @@ describe("POST /api/auth/signin", () => {
     const res = await request(app).post("/api/auth/signin").send(credentials);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty("token");
-    expect(res.body.user.email).toBe(credentials.email);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveProperty("token");
+    expect(res.body.data.user.email).toBe(credentials.email);
   });
 
   it("returns 500 if an unexpected error occurs", async () => {
@@ -209,7 +219,8 @@ describe("POST /api/auth/signin", () => {
     const res = await request(app).post("/api/auth/signin").send(credentials);
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toBe("Simulated signin error");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Simulated signin error");
   });
 });
 
@@ -218,7 +229,8 @@ describe("Middleware: protect (token validation)", () => {
     const res = await request(app).get("/api/auth/getUser");
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Not authorized, no token");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Not authorized, no token");
   });
 
   it("returns 401 for a malformed token", async () => {
@@ -227,7 +239,8 @@ describe("Middleware: protect (token validation)", () => {
       .set("Authorization", "Bearer not-a-real-token");
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Not authorized, token failed");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Not authorized, token failed");
   });
 
   it("returns 401 for an expired token", async () => {
@@ -239,7 +252,8 @@ describe("Middleware: protect (token validation)", () => {
       .set("Authorization", `Bearer ${expiredToken}`);
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Not authorized, token failed");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Not authorized, token failed");
   });
 });
 
@@ -252,9 +266,10 @@ describe("GET /api/auth/getUser", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body._id).toBe(user._id.toString());
-    expect(res.body.email).toBe(user.email);
-    expect(res.body.password).toBeUndefined();
+    expect(res.body.success).toBe(true);
+    expect(res.body.data._id).toBe(user._id.toString());
+    expect(res.body.data.email).toBe(user.email);
+    expect(res.body.data.password).toBeUndefined();
   });
 
   it("returns 404 if the token's user id is well-formed but no longer exists", async () => {
@@ -266,7 +281,8 @@ describe("GET /api/auth/getUser", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(404);
-    expect(res.body.message).toBe("User Not Found");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("User Not Found");
   });
 
   it("returns 500 if the token's id claim is not a valid ObjectId (documents existing behavior)", async () => {
@@ -277,7 +293,8 @@ describe("GET /api/auth/getUser", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toContain("Cast to ObjectId failed");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toContain("Cast to ObjectId failed");
   });
 
   it("returns 500 if an unexpected database error occurs", async () => {
@@ -292,7 +309,8 @@ describe("GET /api/auth/getUser", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toBe("Simulated DB error");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Simulated DB error");
   });
 });
 
@@ -303,7 +321,8 @@ describe("PUT /api/auth/updateUser", () => {
       .send({ name: "No Token" });
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Not authorized, no token");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Not authorized, no token");
   });
 
   it("returns 401 for an invalid token", async () => {
@@ -313,7 +332,8 @@ describe("PUT /api/auth/updateUser", () => {
       .send({ name: "Bad Token" });
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Not authorized, token failed");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Not authorized, token failed");
   });
 
   it("returns 400 for invalid email format during update", async () => {
@@ -325,7 +345,8 @@ describe("PUT /api/auth/updateUser", () => {
       .send({ email: "invalid-email" });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("Invalid email format");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Invalid email format");
   });
 
   it("updates name and profileImageUrl", async () => {
@@ -340,9 +361,10 @@ describe("PUT /api/auth/updateUser", () => {
       });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe("User Updated Successfully");
-    expect(res.body.name).toBe("Updated Name");
-    expect(res.body.profileImageUrl).toBe("http://updated.com/image.jpg");
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.message).toBe("User Updated Successfully");
+    expect(res.body.data.name).toBe("Updated Name");
+    expect(res.body.data.profileImageUrl).toBe("http://updated.com/image.jpg");
   });
 
   it("updates the email if it is unique", async () => {
@@ -355,7 +377,8 @@ describe("PUT /api/auth/updateUser", () => {
       .send({ email: newEmail });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.email).toBe(newEmail);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.email).toBe(newEmail);
   });
 
   it("rejects updating to an email that is already taken", async () => {
@@ -372,7 +395,8 @@ describe("PUT /api/auth/updateUser", () => {
       .send({ email: "taken@example.com" });
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("User With This Email Already Exists");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("User With This Email Already Exists");
   });
 
   it("updates the password securely", async () => {
@@ -384,6 +408,7 @@ describe("PUT /api/auth/updateUser", () => {
       .send({ password: "newSecurePassword" });
 
     expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
 
     const updatedUser = await User.findById(user._id);
     await expect(
@@ -401,7 +426,8 @@ describe("PUT /api/auth/updateUser", () => {
       .send({ name: "Doesn't Matter" });
 
     expect(res.statusCode).toBe(404);
-    expect(res.body.message).toBe("User Not Found");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("User Not Found");
   });
 
   it("returns 500 if an unexpected database error occurs", async () => {
@@ -417,7 +443,8 @@ describe("PUT /api/auth/updateUser", () => {
       .send({ name: "Test" });
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toBe("Simulated update error");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Simulated update error");
   });
 });
 
@@ -426,7 +453,8 @@ describe("DELETE /api/auth/deleteUser", () => {
     const res = await request(app).delete("/api/auth/deleteUser");
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Not authorized, no token");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Not authorized, no token");
   });
 
   it("returns 401 for an invalid token", async () => {
@@ -435,7 +463,8 @@ describe("DELETE /api/auth/deleteUser", () => {
       .set("Authorization", "Bearer invalidtoken");
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Not authorized, token failed");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Not authorized, token failed");
   });
 
   it("returns 404 if the user no longer exists", async () => {
@@ -447,7 +476,8 @@ describe("DELETE /api/auth/deleteUser", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(404);
-    expect(res.body.message).toBe("User Not Found");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("User Not Found");
   });
 
   it("returns 500 if an unexpected database error occurs", async () => {
@@ -462,7 +492,8 @@ describe("DELETE /api/auth/deleteUser", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toBe("Simulated delete error");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Simulated delete error");
   });
 
   it("deletes the user and cascades to their expenses, incomes, and Cloudinary image", async () => {
@@ -476,7 +507,8 @@ describe("DELETE /api/auth/deleteUser", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe("User Deleted Successfully");
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.message).toBe("User Deleted Successfully");
 
     expect(await User.findById(user._id)).toBeNull();
     expect(await Expense.countDocuments({ userId: user._id })).toBe(0);
@@ -496,6 +528,7 @@ describe("DELETE /api/auth/deleteUser", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
     expect(await User.findById(user._id)).toBeNull();
     expect(cloudinary.api.delete_resources).not.toHaveBeenCalled();
   });
@@ -506,7 +539,8 @@ describe("POST /api/auth/upload-image (auth boundary)", () => {
     const res = await request(app).post("/api/auth/upload-image");
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Not authorized, no token");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Not authorized, no token");
   });
 
   it("returns 401 for an invalid token", async () => {
@@ -515,7 +549,8 @@ describe("POST /api/auth/upload-image (auth boundary)", () => {
       .set("Authorization", "Bearer invalidtoken");
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Not authorized, token failed");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Not authorized, token failed");
   });
 });
 
@@ -524,7 +559,8 @@ describe("PUT /api/auth/update-image (auth boundary)", () => {
     const res = await request(app).put("/api/auth/update-image");
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Not authorized, no token");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Not authorized, no token");
   });
 
   it("returns 401 for an invalid token", async () => {
@@ -533,6 +569,7 @@ describe("PUT /api/auth/update-image (auth boundary)", () => {
       .set("Authorization", "Bearer invalidtoken");
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe("Not authorized, token failed");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Not authorized, token failed");
   });
 });
