@@ -1,68 +1,68 @@
-const logger = require("../utils/logger");
+const logger = require('../utils/logger');
 
-describe("utils/logger.js", () => {
-  it("should export a valid Pino logger instance", () => {
+describe('utils/logger.js', () => {
+  it('should export a valid Pino logger instance', () => {
     expect(logger).toBeDefined();
-    expect(typeof logger.info).toBe("function");
-    expect(typeof logger.error).toBe("function");
-    expect(typeof logger.warn).toBe("function");
+    expect(typeof logger.info).toBe('function');
+    expect(typeof logger.error).toBe('function');
+    expect(typeof logger.warn).toBe('function');
   });
 
-  it("should redact sensitive fields when logging objects", () => {
-    const logSpy = jest.spyOn(logger, "info");
+  it('should redact sensitive fields when logging objects', () => {
+    const logSpy = jest.spyOn(logger, 'info');
     const payload = {
-      user: "john_doe",
-      password: "supersecretpassword",
-      token: "secretjwttoken",
+      user: 'john_doe',
+      password: 'supersecretpassword',
+      token: 'secretjwttoken',
     };
 
-    logger.info(payload, "Test user payload");
+    logger.info(payload, 'Test user payload');
 
-    expect(logSpy).toHaveBeenCalledWith(payload, "Test user payload");
+    expect(logSpy).toHaveBeenCalledWith(payload, 'Test user payload');
     logSpy.mockRestore();
   });
 
-  it("should configure transport options in development environment", () => {
+  it('should configure transport options in development environment', () => {
     const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    process.env.NODE_ENV = 'development';
 
     let devLogger;
     jest.isolateModules(() => {
-      devLogger = require("../utils/logger");
+      devLogger = require('../utils/logger');
     });
 
     expect(devLogger).toBeDefined();
-    expect(devLogger.level).toBe("info");
+    expect(devLogger.level).toBe('info');
 
     process.env.NODE_ENV = originalEnv;
   });
 
-  it("should configure level as silent in test environment", () => {
+  it('should configure level as silent in test environment', () => {
     const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "test";
+    process.env.NODE_ENV = 'test';
 
     let testLogger;
     jest.isolateModules(() => {
-      testLogger = require("../utils/logger");
+      testLogger = require('../utils/logger');
     });
 
     expect(testLogger).toBeDefined();
-    expect(testLogger.level).toBe("silent");
+    expect(testLogger.level).toBe('silent');
 
     process.env.NODE_ENV = originalEnv;
   });
 
-  it("should configure default transport in production environment", () => {
+  it('should configure default transport in production environment', () => {
     const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    process.env.NODE_ENV = 'production';
 
     let prodLogger;
     jest.isolateModules(() => {
-      prodLogger = require("../utils/logger");
+      prodLogger = require('../utils/logger');
     });
 
     expect(prodLogger).toBeDefined();
-    expect(prodLogger.level).toBe("info");
+    expect(prodLogger.level).toBe('info');
 
     process.env.NODE_ENV = originalEnv;
   });

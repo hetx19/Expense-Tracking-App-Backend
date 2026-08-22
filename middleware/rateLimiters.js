@@ -1,4 +1,4 @@
-const rateLimit = require("express-rate-limit");
+const rateLimit = require('express-rate-limit');
 
 const globalLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -8,7 +8,7 @@ const globalLimiter = rateLimit({
   message: {
     success: false,
     error: {
-      message: "Too many requests, please try again later.",
+      message: 'Too many requests, please try again later.',
       code: 429,
     },
   },
@@ -22,7 +22,7 @@ const authLimiter = rateLimit({
   message: {
     success: false,
     error: {
-      message: "Too many authentication attempts, please try again later.",
+      message: 'Too many authentication attempts, please try again later.',
       code: 429,
     },
   },

@@ -1,8 +1,8 @@
-const request = require("supertest");
-const { MongoMemoryServer } = require("mongodb-memory-server");
-const mongoose = require("mongoose");
-const app = require("../app");
-const Expense = require("../models/Expense");
+const request = require('supertest');
+const { MongoMemoryServer } = require('mongodb-memory-server');
+const mongoose = require('mongoose');
+const app = require('../app');
+const Expense = require('../models/Expense');
 
 let mongoServer;
 
@@ -26,7 +26,7 @@ afterEach(async () => {
 
 global.currentUserId = null;
 
-jest.mock("../middleware/auth", () => (req, res, next) => {
+jest.mock('../middleware/auth', () => (req, res, next) => {
   req.user = {
     _id: (global.currentUserId || global.testUserId).toString(),
   };
@@ -37,143 +37,143 @@ beforeEach(() => {
   global.currentUserId = global.testUserId;
 });
 
-describe("Expense API", () => {
-  describe("POST /api/expense/add", () => {
-    it("should add an expense", async () => {
-      const res = await request(app).post("/api/expense/add").send({
-        icon: "🍕",
-        category: "Food",
+describe('Expense API', () => {
+  describe('POST /api/expense/add', () => {
+    it('should add an expense', async () => {
+      const res = await request(app).post('/api/expense/add').send({
+        icon: '🍕',
+        category: 'Food',
         amount: 20,
-        date: "2025-07-20",
+        date: '2025-07-20',
       });
 
       expect(res.statusCode).toBe(201);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.category).toBe("Food");
+      expect(res.body.data.category).toBe('Food');
       expect(res.body.data.amount).toBe(20);
     });
 
-    it("should fail when required fields are missing", async () => {
-      const res = await request(app).post("/api/expense/add").send({
-        category: "",
-        amount: "",
+    it('should fail when required fields are missing', async () => {
+      const res = await request(app).post('/api/expense/add').send({
+        category: '',
+        amount: '',
       });
 
       expect(res.statusCode).toBe(400);
       expect(res.body.success).toBe(false);
-      expect(res.body.error.message).toBe("Missing Required Fields");
+      expect(res.body.error.message).toBe('Missing Required Fields');
     });
 
-    it("should fail when amount is negative", async () => {
-      const res = await request(app).post("/api/expense/add").send({
-        icon: "🍕",
-        category: "Food",
+    it('should fail when amount is negative', async () => {
+      const res = await request(app).post('/api/expense/add').send({
+        icon: '🍕',
+        category: 'Food',
         amount: -20,
-        date: "2025-07-20",
+        date: '2025-07-20',
       });
 
       expect(res.statusCode).toBe(400);
       expect(res.body.success).toBe(false);
-      expect(res.body.error.message).toBe("Amount must be a positive number");
+      expect(res.body.error.message).toBe('Amount must be a positive number');
       expect(res.body.error.details).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            field: "amount",
-            message: "Amount must be a positive number",
+            field: 'amount',
+            message: 'Amount must be a positive number',
           }),
-        ]),
+        ])
       );
     });
 
-    it("should fail when date format is invalid", async () => {
-      const res = await request(app).post("/api/expense/add").send({
-        icon: "🍕",
-        category: "Food",
+    it('should fail when date format is invalid', async () => {
+      const res = await request(app).post('/api/expense/add').send({
+        icon: '🍕',
+        category: 'Food',
         amount: 20,
-        date: "invalid-date",
+        date: 'invalid-date',
       });
 
       expect(res.statusCode).toBe(400);
       expect(res.body.success).toBe(false);
-      expect(res.body.error.message).toBe("Invalid date format");
+      expect(res.body.error.message).toBe('Invalid date format');
       expect(res.body.error.details).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            field: "date",
-            message: "Invalid date format",
+            field: 'date',
+            message: 'Invalid date format',
           }),
-        ]),
+        ])
       );
     });
 
-    it("should return 500 if saving expense throws an error", async () => {
+    it('should return 500 if saving expense throws an error', async () => {
       const originalSave = Expense.prototype.save;
       Expense.prototype.save = jest
         .fn()
-        .mockRejectedValue(new Error("Mock DB error"));
+        .mockRejectedValue(new Error('Mock DB error'));
 
-      const res = await request(app).post("/api/expense/add").send({
-        icon: "💡",
-        category: "Utilities",
+      const res = await request(app).post('/api/expense/add').send({
+        icon: '💡',
+        category: 'Utilities',
         amount: 60,
-        date: "2025-07-20",
+        date: '2025-07-20',
       });
 
       expect(res.statusCode).toBe(500);
       expect(res.body.success).toBe(false);
-      expect(res.body.error.message).toBe("Mock DB error");
+      expect(res.body.error.message).toBe('Mock DB error');
 
       Expense.prototype.save = originalSave;
     });
   });
 
-  describe("GET /api/expense", () => {
-    it("should return all expenses", async () => {
+  describe('GET /api/expense', () => {
+    it('should return all expenses', async () => {
       await Expense.create([
         {
           userId: global.testUserId,
-          icon: "✈️",
-          category: "Travel",
+          icon: '✈️',
+          category: 'Travel',
           amount: 100,
           date: new Date(),
         },
         {
           userId: global.testUserId,
-          icon: "🍕",
-          category: "Food",
+          icon: '🍕',
+          category: 'Food',
           amount: 50,
           date: new Date(),
         },
       ]);
 
-      const res = await request(app).get("/api/expense");
+      const res = await request(app).get('/api/expense');
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.length).toBe(2);
     });
 
-    it("should return 500 if getting expenses throws an error", async () => {
+    it('should return 500 if getting expenses throws an error', async () => {
       const originalFind = Expense.find;
       Expense.find = jest.fn(() => ({
-        sort: jest.fn().mockRejectedValue(new Error("Mock get error")),
+        sort: jest.fn().mockRejectedValue(new Error('Mock get error')),
       }));
 
-      const res = await request(app).get("/api/expense");
+      const res = await request(app).get('/api/expense');
 
       expect(res.statusCode).toBe(500);
       expect(res.body.success).toBe(false);
-      expect(res.body.error.message).toBe("Mock get error");
+      expect(res.body.error.message).toBe('Mock get error');
 
       Expense.find = originalFind;
     });
   });
 
-  describe("DELETE /api/expense/:id", () => {
-    it("should delete an expense", async () => {
+  describe('DELETE /api/expense/:id', () => {
+    it('should delete an expense', async () => {
       const expense = await Expense.create({
         userId: global.testUserId,
-        icon: "📚",
-        category: "Books",
+        icon: '📚',
+        category: 'Books',
         amount: 30,
         date: new Date(),
       });
@@ -181,23 +181,23 @@ describe("Expense API", () => {
       const res = await request(app).delete(`/api/expense/${expense._id}`);
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.message).toBe("Expense Deleted Successfully");
+      expect(res.body.data.message).toBe('Expense Deleted Successfully');
     });
 
-    it("should return 404 if expense not found", async () => {
+    it('should return 404 if expense not found', async () => {
       const fakeId = new mongoose.Types.ObjectId();
       const res = await request(app).delete(`/api/expense/${fakeId}`);
 
       expect(res.statusCode).toBe(404);
       expect(res.body.success).toBe(false);
-      expect(res.body.error.message).toBe("Expense Not Found");
+      expect(res.body.error.message).toBe('Expense Not Found');
     });
 
     it("should not delete another user's expense", async () => {
       const expense = await Expense.create({
         userId: global.testUserId,
-        icon: "🍕",
-        category: "Food",
+        icon: '🍕',
+        category: 'Food',
         amount: 20,
         date: new Date(),
       });
@@ -208,62 +208,62 @@ describe("Expense API", () => {
 
       expect(res.statusCode).toBe(404);
       expect(res.body.success).toBe(false);
-      expect(res.body.error.message).toBe("Expense Not Found");
+      expect(res.body.error.message).toBe('Expense Not Found');
 
       const stillExists = await Expense.findById(expense._id);
       expect(stillExists).not.toBeNull();
     });
 
-    it("should return 500 if deleteExpense throws an error", async () => {
+    it('should return 500 if deleteExpense throws an error', async () => {
       const fakeId = new mongoose.Types.ObjectId();
 
       const originalFindOneAndDelete = Expense.findOneAndDelete;
 
       Expense.findOneAndDelete = jest.fn().mockImplementation(() => {
-        throw new Error("Mock delete error");
+        throw new Error('Mock delete error');
       });
 
       const res = await request(app).delete(`/api/expense/${fakeId}`);
 
       expect(res.statusCode).toBe(500);
       expect(res.body.success).toBe(false);
-      expect(res.body.error.message).toBe("Mock delete error");
+      expect(res.body.error.message).toBe('Mock delete error');
 
       Expense.findOneAndDelete = originalFindOneAndDelete;
     });
   });
 
-  describe("GET /api/expense/download", () => {
-    it("should download expense data as Excel", async () => {
+  describe('GET /api/expense/download', () => {
+    it('should download expense data as Excel', async () => {
       await Expense.create({
         userId: global.testUserId,
-        icon: "🏋️",
-        category: "Gym",
+        icon: '🏋️',
+        category: 'Gym',
         amount: 45,
         date: new Date(),
       });
 
-      const res = await request(app).get("/api/expense/download");
+      const res = await request(app).get('/api/expense/download');
       expect(res.statusCode).toBe(200);
-      expect(res.headers["content-type"]).toBe(
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      expect(res.headers['content-type']).toBe(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       );
-      expect(res.headers["content-disposition"]).toContain(
-        "attachment; filename=expense-details.xlsx",
+      expect(res.headers['content-disposition']).toContain(
+        'attachment; filename=expense-details.xlsx'
       );
     });
 
-    it("should return 500 if Excel generation throws an error", async () => {
+    it('should return 500 if Excel generation throws an error', async () => {
       const originalFind = Expense.find;
       Expense.find = jest.fn(() => ({
-        sort: jest.fn().mockRejectedValue(new Error("Mock Excel error")),
+        sort: jest.fn().mockRejectedValue(new Error('Mock Excel error')),
       }));
 
-      const res = await request(app).get("/api/expense/download");
+      const res = await request(app).get('/api/expense/download');
 
       expect(res.statusCode).toBe(500);
       expect(res.body.success).toBe(false);
-      expect(res.body.error.message).toBe("Mock Excel error");
+      expect(res.body.error.message).toBe('Mock Excel error');
 
       Expense.find = originalFind;
     });

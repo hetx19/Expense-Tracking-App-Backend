@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const Income = require("../models/Income");
+const mongoose = require('mongoose');
+const Income = require('../models/Income');
 
 const findByUser = async (userId) => {
   return await Income.find({ userId }).sort({ date: -1 });
@@ -26,7 +26,7 @@ const getTotalAmount = async (userId) => {
   const userObjectId = new mongoose.Types.ObjectId(String(userId));
   const result = await Income.aggregate([
     { $match: { userId: userObjectId } },
-    { $group: { _id: null, total: { $sum: "$amount" } } },
+    { $group: { _id: null, total: { $sum: '$amount' } } },
   ]);
   return result[0]?.total || 0;
 };

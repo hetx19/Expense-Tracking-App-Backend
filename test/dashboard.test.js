@@ -1,23 +1,23 @@
-jest.mock("../middleware/auth", () => (req, res, next) => {
-  req.user = { _id: "60f6f6f6f6f6f6f6f6f6f6f6" };
+jest.mock('../middleware/auth', () => (req, res, next) => {
+  req.user = { _id: '60f6f6f6f6f6f6f6f6f6f6f6' };
   next();
 });
 
-const request = require("supertest");
-const app = require("../app");
+const request = require('supertest');
+const app = require('../app');
 
-jest.mock("../models/Income");
-jest.mock("../models/Expense");
+jest.mock('../models/Income');
+jest.mock('../models/Expense');
 
-const Income = require("../models/Income");
-const Expense = require("../models/Expense");
+const Income = require('../models/Income');
+const Expense = require('../models/Expense');
 
-describe("GET /api/dashboard", () => {
+describe('GET /api/dashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("should return dashboard data successfully", async () => {
+  it('should return dashboard data successfully', async () => {
     const now = new Date();
 
     const incomeTransactions = [
@@ -68,7 +68,7 @@ describe("GET /api/dashboard", () => {
       };
     });
 
-    const response = await request(app).get("/api/dashboard");
+    const response = await request(app).get('/api/dashboard');
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
@@ -80,17 +80,17 @@ describe("GET /api/dashboard", () => {
     expect(Array.isArray(response.body.data.recentTransactions)).toBe(true);
   });
 
-  it("should handle server error gracefully", async () => {
-    Income.aggregate.mockRejectedValue(new Error("Database error"));
+  it('should handle server error gracefully', async () => {
+    Income.aggregate.mockRejectedValue(new Error('Database error'));
 
-    const response = await request(app).get("/api/dashboard");
+    const response = await request(app).get('/api/dashboard');
 
     expect(response.status).toBe(500);
     expect(response.body.success).toBe(false);
-    expect(response.body.error).toHaveProperty("message", "Database error");
+    expect(response.body.error).toHaveProperty('message', 'Database error');
   });
 
-  it("should return zero totals when user has no transactions", async () => {
+  it('should return zero totals when user has no transactions', async () => {
     Income.aggregate.mockResolvedValue([]);
     Expense.aggregate.mockResolvedValue([]);
 
@@ -116,7 +116,7 @@ describe("GET /api/dashboard", () => {
       };
     });
 
-    const response = await request(app).get("/api/dashboard");
+    const response = await request(app).get('/api/dashboard');
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);

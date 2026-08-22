@@ -1,13 +1,13 @@
-const jwt = require("jsonwebtoken");
-const env = require("../config/env");
+const jwt = require('jsonwebtoken');
+const env = require('../config/env');
 
 const protect = (req, res, next) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
+    const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) {
       return res.status(401).json({
         success: false,
-        error: { message: "Not authorized, no token", code: 401 },
+        error: { message: 'Not authorized, no token', code: 401 },
       });
     }
 
@@ -17,7 +17,7 @@ const protect = (req, res, next) => {
   } catch (error) {
     return res.status(401).json({
       success: false,
-      error: { message: "Not authorized, token failed", code: 401 },
+      error: { message: 'Not authorized, token failed', code: 401 },
     });
   }
 };

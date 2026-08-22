@@ -1,5 +1,5 @@
-const xlsx = require("xlsx");
-const AppError = require("../utils/AppError");
+const xlsx = require('xlsx');
+const AppError = require('../utils/AppError');
 
 const addTransaction = async (repository, data) => {
   const { date, ...rest } = data;
@@ -33,7 +33,7 @@ const generateTransactionExcel = async (
   const wb = xlsx.utils.book_new();
   const ws = xlsx.utils.json_to_sheet(data);
   xlsx.utils.book_append_sheet(wb, ws, sheetName);
-  return xlsx.write(wb, { bookType: "xlsx", type: "buffer" });
+  return xlsx.write(wb, { bookType: 'xlsx', type: 'buffer' });
 };
 
 module.exports = {

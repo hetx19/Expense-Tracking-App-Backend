@@ -1,5 +1,5 @@
-const expenseRepository = require("../repositories/expense.repository");
-const transactionService = require("./transaction.service");
+const expenseRepository = require('../repositories/expense.repository');
+const transactionService = require('./transaction.service');
 
 const addExpense = async ({ userId, icon, category, amount, date }) => {
   return await transactionService.addTransaction(expenseRepository, {
@@ -14,7 +14,7 @@ const addExpense = async ({ userId, icon, category, amount, date }) => {
 const getAllExpenses = async (userId) => {
   return await transactionService.getTransactionsByUser(
     expenseRepository,
-    userId,
+    userId
   );
 };
 
@@ -23,7 +23,7 @@ const deleteExpense = async (id, userId) => {
     expenseRepository,
     id,
     userId,
-    "Expense",
+    'Expense'
   );
 };
 
@@ -31,12 +31,12 @@ const generateExpenseExcel = async (userId) => {
   return await transactionService.generateTransactionExcel(
     expenseRepository,
     userId,
-    "Expense",
+    'Expense',
     (item) => ({
       Category: item.category,
       Amount: item.amount,
       Date: item.date,
-    }),
+    })
   );
 };
 

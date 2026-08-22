@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const Expense = require("../models/Expense");
+const mongoose = require('mongoose');
+const Expense = require('../models/Expense');
 
 const findByUser = async (userId) => {
   return await Expense.find({ userId }).sort({ date: -1 });
@@ -26,7 +26,7 @@ const getTotalAmount = async (userId) => {
   const userObjectId = new mongoose.Types.ObjectId(String(userId));
   const result = await Expense.aggregate([
     { $match: { userId: userObjectId } },
-    { $group: { _id: null, total: { $sum: "$amount" } } },
+    { $group: { _id: null, total: { $sum: '$amount' } } },
   ]);
   return result[0]?.total || 0;
 };
