@@ -26,7 +26,7 @@ describe('Rate Limiters Middleware', () => {
     }
   });
 
-  it('should return 429 when POST /api/auth/signin exceeds the 5 request threshold', async () => {
+  it('should return 429 when POST /api/v1/auth/signin exceeds the 5 request threshold', async () => {
     const payload = {
       email: 'ratelimit@example.com',
       password: 'password123',
@@ -34,11 +34,11 @@ describe('Rate Limiters Middleware', () => {
 
     // Send 5 requests (up to limit)
     for (let i = 0; i < 5; i++) {
-      await request(app).post('/api/auth/signin').send(payload);
+      await request(app).post('/api/v1/auth/signin').send(payload);
     }
 
     // 6th request should be blocked with 429
-    const res = await request(app).post('/api/auth/signin').send(payload);
+    const res = await request(app).post('/api/v1/auth/signin').send(payload);
 
     expect(res.statusCode).toBe(429);
     expect(res.body.success).toBe(false);
@@ -46,7 +46,7 @@ describe('Rate Limiters Middleware', () => {
     expect(res.headers['retry-after']).toBeDefined();
   });
 
-  it('should return 429 when POST /api/auth/signup exceeds the 5 request threshold', async () => {
+  it('should return 429 when POST /api/v1/auth/signup exceeds the 5 request threshold', async () => {
     const payload = {
       name: 'Rate Limit User',
       email: 'ratelimitsignup@example.com',
@@ -55,11 +55,11 @@ describe('Rate Limiters Middleware', () => {
 
     // Send 5 requests
     for (let i = 0; i < 5; i++) {
-      await request(app).post('/api/auth/signup').send(payload);
+      await request(app).post('/api/v1/auth/signup').send(payload);
     }
 
     // 6th request should hit limit
-    const res = await request(app).post('/api/auth/signup').send(payload);
+    const res = await request(app).post('/api/v1/auth/signup').send(payload);
 
     expect(res.statusCode).toBe(429);
     expect(res.body.success).toBe(false);

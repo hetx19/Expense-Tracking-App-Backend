@@ -98,7 +98,7 @@ By default the API is available at `http://localhost:5001`.
 │   ├── db.js                  # MongoDB connection
 │   └── cloudinary.js          # Cloudinary client configuration
 ├── controllers/              # Request handlers for auth, expense, income, dashboard
-├── routes/                   # Express routers, mounted under /api/*
+├── routes/                   # Express routers, mounted under /api/v1/*
 ├── middleware/
 │   ├── auth.js                 # JWT verification (route protection)
 │   ├── upload.js                # Multer configuration for image uploads
@@ -117,32 +117,37 @@ By default the API is available at `http://localhost:5001`.
 
 ## API Overview
 
-All routes are mounted under `/api`. Routes marked **Auth** require a valid `Authorization: Bearer <token>` header.
+All routes are mounted under `/api/v1`. Routes marked **Auth** require a valid `Authorization: Bearer <token>` header.
 
-### Auth (`/api/auth`)
+### Auth (`/api/v1/auth`)
 
-| Method   | Path            | Auth | Description                            |
-| -------- | --------------- | ---- | -------------------------------------- |
-| `POST`   | `/signup`       | No   | Register a new user                    |
-| `POST`   | `/signin`       | No   | Sign in and receive a JWT              |
-| `GET`    | `/getUser`      | Yes  | Get the current user's profile         |
-| `PUT`    | `/updateUser`   | Yes  | Update name, email, or password        |
-| `DELETE` | `/deleteUser`   | Yes  | Delete the current user and their data |
-| `POST`   | `/upload-image` | Yes  | Upload a profile image                 |
-| `PUT`    | `/update-image` | Yes  | Replace the current profile image      |
+| Method | Path            | Auth | Description               |
+| ------ | --------------- | ---- | ------------------------- |
+| `POST` | `/signup`       | No   | Register a new user       |
+| `POST` | `/signin`       | No   | Sign in and receive a JWT |
+| `POST` | `/upload-image` | Yes  | Upload a profile image    |
 
-### Expenses (`/api/expense`) and Income (`/api/income`)
+### Users (`/api/v1/users`)
+
+| Method   | Path        | Auth | Description                            |
+| -------- | ----------- | ---- | -------------------------------------- |
+| `GET`    | `/me`       | Yes  | Get the current user's profile         |
+| `PUT`    | `/me`       | Yes  | Update name, email, or password        |
+| `DELETE` | `/me`       | Yes  | Delete the current user and their data |
+| `PUT`    | `/me/image` | Yes  | Replace the current profile image      |
+
+### Expenses (`/api/v1/expenses`) and Income (`/api/v1/incomes`)
 
 Both resources expose the same shape:
 
 | Method   | Path        | Auth | Description                               |
 | -------- | ----------- | ---- | ----------------------------------------- |
 | `GET`    | `/`         | Yes  | List all records for the current user     |
-| `POST`   | `/add`      | Yes  | Create a record                           |
+| `POST`   | `/`         | Yes  | Create a record                           |
 | `DELETE` | `/:id`      | Yes  | Delete a record owned by the current user |
 | `GET`    | `/download` | Yes  | Export records to an `.xlsx` file         |
 
-### Dashboard (`/api/dashboard`)
+### Dashboard (`/api/v1/dashboard`)
 
 | Method | Path | Auth | Description                               |
 | ------ | ---- | ---- | ----------------------------------------- |

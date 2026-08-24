@@ -53,7 +53,7 @@ const createUserAndToken = async () => {
   return { user, token };
 };
 
-describe('POST /api/auth/upload-image', () => {
+describe('POST /api/v1/auth/upload-image', () => {
   let token;
 
   beforeEach(async () => {
@@ -79,7 +79,7 @@ describe('POST /api/auth/upload-image', () => {
     }
 
     const res = await request(app)
-      .post('/api/auth/upload-image')
+      .post('/api/v1/auth/upload-image')
       .set('Authorization', `Bearer ${token}`)
       .attach('image', testImagePath);
 
@@ -94,7 +94,7 @@ describe('POST /api/auth/upload-image', () => {
 
   it('should return 400 if no file is uploaded', async () => {
     const res = await request(app)
-      .post('/api/auth/upload-image')
+      .post('/api/v1/auth/upload-image')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.statusCode).toBe(400);
@@ -112,7 +112,7 @@ describe('POST /api/auth/upload-image', () => {
     fs.writeFileSync(testFilePath, 'test content');
 
     const res = await request(app)
-      .post('/api/auth/upload-image')
+      .post('/api/v1/auth/upload-image')
       .set('Authorization', `Bearer ${token}`)
       .attach('image', testFilePath);
 
@@ -137,7 +137,7 @@ describe('POST /api/auth/upload-image', () => {
     }
 
     const res = await request(app)
-      .post('/api/auth/upload-image')
+      .post('/api/v1/auth/upload-image')
       .set('Authorization', `Bearer ${token}`)
       .attach('image', testImagePath);
 
@@ -147,7 +147,7 @@ describe('POST /api/auth/upload-image', () => {
   });
 });
 
-describe('POST /api/auth/update-image', () => {
+describe('uploadImage controller', () => {
   it('should return 400 if no file uploaded', async () => {
     const { uploadImage } = require('../controllers/authControllers');
 
@@ -221,7 +221,7 @@ describe('POST /api/auth/update-image', () => {
   });
 });
 
-describe('PUT /api/auth/update-image', () => {
+describe('updateImage controller', () => {
   let user;
 
   beforeEach(async () => {

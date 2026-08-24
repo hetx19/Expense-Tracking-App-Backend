@@ -12,7 +12,7 @@ jest.mock('../models/Expense');
 const Income = require('../models/Income');
 const Expense = require('../models/Expense');
 
-describe('GET /api/dashboard', () => {
+describe('GET /api/v1/dashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -68,7 +68,7 @@ describe('GET /api/dashboard', () => {
       };
     });
 
-    const response = await request(app).get('/api/dashboard');
+    const response = await request(app).get('/api/v1/dashboard');
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
@@ -83,7 +83,7 @@ describe('GET /api/dashboard', () => {
   it('should handle server error gracefully', async () => {
     Income.aggregate.mockRejectedValue(new Error('Database error'));
 
-    const response = await request(app).get('/api/dashboard');
+    const response = await request(app).get('/api/v1/dashboard');
 
     expect(response.status).toBe(500);
     expect(response.body.success).toBe(false);
@@ -116,7 +116,7 @@ describe('GET /api/dashboard', () => {
       };
     });
 
-    const response = await request(app).get('/api/dashboard');
+    const response = await request(app).get('/api/v1/dashboard');
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);

@@ -39,9 +39,9 @@ beforeEach(() => {
 });
 
 describe('Income API', () => {
-  describe('POST /api/income/add', () => {
+  describe('POST /api/v1/incomes', () => {
     it('should add an income', async () => {
-      const res = await request(app).post('/api/income/add').send({
+      const res = await request(app).post('/api/v1/incomes').send({
         icon: '💰',
         source: 'Freelance',
         amount: 2000,
@@ -55,7 +55,7 @@ describe('Income API', () => {
     });
 
     it('should fail when required fields are missing', async () => {
-      const res = await request(app).post('/api/income/add').send({
+      const res = await request(app).post('/api/v1/incomes').send({
         source: '',
         amount: '',
       });
@@ -66,7 +66,7 @@ describe('Income API', () => {
     });
 
     it('should fail when amount is negative', async () => {
-      const res = await request(app).post('/api/income/add').send({
+      const res = await request(app).post('/api/v1/incomes').send({
         icon: '💰',
         source: 'Freelance',
         amount: -100,
@@ -87,7 +87,7 @@ describe('Income API', () => {
     });
 
     it('should fail when date format is invalid', async () => {
-      const res = await request(app).post('/api/income/add').send({
+      const res = await request(app).post('/api/v1/incomes').send({
         icon: '💰',
         source: 'Freelance',
         amount: 2000,
@@ -113,7 +113,7 @@ describe('Income API', () => {
         .fn()
         .mockRejectedValue(new Error('Mock DB error'));
 
-      const res = await request(app).post('/api/income/add').send({
+      const res = await request(app).post('/api/v1/incomes').send({
         icon: '💰',
         source: 'Freelance',
         amount: 2000,
@@ -128,7 +128,7 @@ describe('Income API', () => {
     });
   });
 
-  describe('GET /api/income', () => {
+  describe('GET /api/v1/incomes', () => {
     it('should return all incomes', async () => {
       await Income.create([
         {
@@ -147,7 +147,7 @@ describe('Income API', () => {
         },
       ]);
 
-      const res = await request(app).get('/api/income');
+      const res = await request(app).get('/api/v1/incomes');
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.length).toBe(2);
@@ -159,7 +159,7 @@ describe('Income API', () => {
         sort: jest.fn().mockRejectedValue(new Error('Mock get error')),
       }));
 
-      const res = await request(app).get('/api/income');
+      const res = await request(app).get('/api/v1/incomes');
 
       expect(res.statusCode).toBe(500);
       expect(res.body.success).toBe(false);
@@ -169,7 +169,7 @@ describe('Income API', () => {
     });
   });
 
-  describe('DELETE /api/income/:id', () => {
+  describe('DELETE /api/v1/incomes/:id', () => {
     it('should delete an income', async () => {
       const income = await Income.create({
         userId: global.testUserId,
@@ -179,7 +179,7 @@ describe('Income API', () => {
         date: new Date(),
       });
 
-      const res = await request(app).delete(`/api/income/${income._id}`);
+      const res = await request(app).delete(`/api/v1/incomes/${income._id}`);
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.message).toBe('Income Deleted Successfully');
@@ -187,7 +187,7 @@ describe('Income API', () => {
 
     it('should return 404 if income not found', async () => {
       const fakeId = new mongoose.Types.ObjectId();
-      const res = await request(app).delete(`/api/income/${fakeId}`);
+      const res = await request(app).delete(`/api/v1/incomes/${fakeId}`);
       expect(res.statusCode).toBe(404);
       expect(res.body.success).toBe(false);
       expect(res.body.error.message).toBe('Income Not Found');
@@ -204,7 +204,7 @@ describe('Income API', () => {
 
       global.currentUserId = global.otherUserId;
 
-      const res = await request(app).delete(`/api/income/${income._id}`);
+      const res = await request(app).delete(`/api/v1/incomes/${income._id}`);
 
       expect(res.statusCode).toBe(404);
       expect(res.body.success).toBe(false);
@@ -223,7 +223,7 @@ describe('Income API', () => {
         throw new Error('Mock delete error');
       });
 
-      const res = await request(app).delete(`/api/income/${fakeId}`);
+      const res = await request(app).delete(`/api/v1/incomes/${fakeId}`);
 
       expect(res.statusCode).toBe(500);
       expect(res.body.success).toBe(false);
@@ -233,7 +233,7 @@ describe('Income API', () => {
     });
   });
 
-  describe('GET /api/income/download', () => {
+  describe('GET /api/v1/incomes/download', () => {
     it('should download income data as Excel', async () => {
       await Income.create({
         userId: global.testUserId,
@@ -243,7 +243,7 @@ describe('Income API', () => {
         date: new Date(),
       });
 
-      const res = await request(app).get('/api/income/download');
+      const res = await request(app).get('/api/v1/incomes/download');
       expect(res.statusCode).toBe(200);
       expect(res.header['content-type']).toBe(
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -259,7 +259,7 @@ describe('Income API', () => {
         sort: jest.fn().mockRejectedValue(new Error('Mock Excel error')),
       }));
 
-      const res = await request(app).get('/api/income/download');
+      const res = await request(app).get('/api/v1/incomes/download');
 
       expect(res.statusCode).toBe(500);
       expect(res.body.success).toBe(false);

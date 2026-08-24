@@ -9,6 +9,7 @@ let mongoServer;
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
+
   await mongoose.connect(uri, {});
 
   global.testUserId = new mongoose.Types.ObjectId();
@@ -38,9 +39,9 @@ beforeEach(() => {
 });
 
 describe('Expense API', () => {
-  describe('POST /api/expense/add', () => {
+  describe('POST /api/v1/expenses', () => {
     it('should add an expense', async () => {
-      const res = await request(app).post('/api/expense/add').send({
+      const res = await request(app).post('/api/v1/expenses').send({
         icon: '🍕',
         category: 'Food',
         amount: 20,
@@ -54,7 +55,7 @@ describe('Expense API', () => {
     });
 
     it('should fail when required fields are missing', async () => {
-      const res = await request(app).post('/api/expense/add').send({
+      const res = await request(app).post('/api/v1/expenses').send({
         category: '',
         amount: '',
       });
@@ -65,7 +66,7 @@ describe('Expense API', () => {
     });
 
     it('should fail when amount is negative', async () => {
-      const res = await request(app).post('/api/expense/add').send({
+      const res = await request(app).post('/api/v1/expenses').send({
         icon: '🍕',
         category: 'Food',
         amount: -20,
@@ -86,7 +87,7 @@ describe('Expense API', () => {
     });
 
     it('should fail when date format is invalid', async () => {
-      const res = await request(app).post('/api/expense/add').send({
+      const res = await request(app).post('/api/v1/expenses').send({
         icon: '🍕',
         category: 'Food',
         amount: 20,
@@ -112,7 +113,7 @@ describe('Expense API', () => {
         .fn()
         .mockRejectedValue(new Error('Mock DB error'));
 
-      const res = await request(app).post('/api/expense/add').send({
+      const res = await request(app).post('/api/v1/expenses').send({
         icon: '💡',
         category: 'Utilities',
         amount: 60,
@@ -127,7 +128,7 @@ describe('Expense API', () => {
     });
   });
 
-  describe('GET /api/expense', () => {
+  describe('GET /api/v1/expenses', () => {
     it('should return all expenses', async () => {
       await Expense.create([
         {
@@ -146,7 +147,7 @@ describe('Expense API', () => {
         },
       ]);
 
-      const res = await request(app).get('/api/expense');
+      const res = await request(app).get('/api/v1/expenses');
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.length).toBe(2);
@@ -158,7 +159,7 @@ describe('Expense API', () => {
         sort: jest.fn().mockRejectedValue(new Error('Mock get error')),
       }));
 
-      const res = await request(app).get('/api/expense');
+      const res = await request(app).get('/api/v1/expenses');
 
       expect(res.statusCode).toBe(500);
       expect(res.body.success).toBe(false);
@@ -168,7 +169,7 @@ describe('Expense API', () => {
     });
   });
 
-  describe('DELETE /api/expense/:id', () => {
+  describe('DELETE /api/v1/expenses/:id', () => {
     it('should delete an expense', async () => {
       const expense = await Expense.create({
         userId: global.testUserId,
@@ -178,7 +179,7 @@ describe('Expense API', () => {
         date: new Date(),
       });
 
-      const res = await request(app).delete(`/api/expense/${expense._id}`);
+      const res = await request(app).delete(`/api/v1/expenses/${expense._id}`);
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.message).toBe('Expense Deleted Successfully');
@@ -186,7 +187,7 @@ describe('Expense API', () => {
 
     it('should return 404 if expense not found', async () => {
       const fakeId = new mongoose.Types.ObjectId();
-      const res = await request(app).delete(`/api/expense/${fakeId}`);
+      const res = await request(app).delete(`/api/v1/expenses/${fakeId}`);
 
       expect(res.statusCode).toBe(404);
       expect(res.body.success).toBe(false);
@@ -204,7 +205,7 @@ describe('Expense API', () => {
 
       global.currentUserId = global.otherUserId;
 
-      const res = await request(app).delete(`/api/expense/${expense._id}`);
+      const res = await request(app).delete(`/api/v1/expenses/${expense._id}`);
 
       expect(res.statusCode).toBe(404);
       expect(res.body.success).toBe(false);
@@ -223,7 +224,7 @@ describe('Expense API', () => {
         throw new Error('Mock delete error');
       });
 
-      const res = await request(app).delete(`/api/expense/${fakeId}`);
+      const res = await request(app).delete(`/api/v1/expenses/${fakeId}`);
 
       expect(res.statusCode).toBe(500);
       expect(res.body.success).toBe(false);
@@ -233,7 +234,7 @@ describe('Expense API', () => {
     });
   });
 
-  describe('GET /api/expense/download', () => {
+  describe('GET /api/v1/expenses/download', () => {
     it('should download expense data as Excel', async () => {
       await Expense.create({
         userId: global.testUserId,
@@ -243,7 +244,7 @@ describe('Expense API', () => {
         date: new Date(),
       });
 
-      const res = await request(app).get('/api/expense/download');
+      const res = await request(app).get('/api/v1/expenses/download');
       expect(res.statusCode).toBe(200);
       expect(res.headers['content-type']).toBe(
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -259,7 +260,7 @@ describe('Expense API', () => {
         sort: jest.fn().mockRejectedValue(new Error('Mock Excel error')),
       }));
 
-      const res = await request(app).get('/api/expense/download');
+      const res = await request(app).get('/api/v1/expenses/download');
 
       expect(res.statusCode).toBe(500);
       expect(res.body.success).toBe(false);

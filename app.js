@@ -9,6 +9,7 @@ const { globalLimiter } = require('./middleware/rateLimiters');
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 const incomeRoutes = require('./routes/incomeRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
@@ -35,11 +36,12 @@ app.use(
   })
 );
 
-// Route
-app.use('/api/auth', authRoutes);
-app.use('/api/income', incomeRoutes);
-app.use('/api/expense', expenseRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+// Routes
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/incomes', incomeRoutes);
+app.use('/api/v1/expenses', expenseRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'), (error) => {

@@ -75,9 +75,9 @@ const createUserAndToken = async (overrides = {}) => {
 const signToken = (id, options = { expiresIn: '2h' }) =>
   jwt.sign({ id }, env.JWT_SECRET, options);
 
-describe('POST /api/auth/signup', () => {
+describe('POST /api/v1/auth/signup', () => {
   it('returns 400 if required fields are missing', async () => {
-    const res = await request(app).post('/api/auth/signup').send({});
+    const res = await request(app).post('/api/v1/auth/signup').send({});
 
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
@@ -87,7 +87,7 @@ describe('POST /api/auth/signup', () => {
   it('returns 400 for invalid email format', async () => {
     const payload = buildSignupPayload({ email: 'invalid-email' });
 
-    const res = await request(app).post('/api/auth/signup').send(payload);
+    const res = await request(app).post('/api/v1/auth/signup').send(payload);
 
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
@@ -97,7 +97,7 @@ describe('POST /api/auth/signup', () => {
   it('creates a new user and returns a token', async () => {
     const payload = buildSignupPayload();
 
-    const res = await request(app).post('/api/auth/signup').send(payload);
+    const res = await request(app).post('/api/v1/auth/signup').send(payload);
 
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
@@ -108,8 +108,8 @@ describe('POST /api/auth/signup', () => {
   it('rejects duplicate registration for the same email', async () => {
     const payload = buildSignupPayload();
 
-    await request(app).post('/api/auth/signup').send(payload);
-    const res = await request(app).post('/api/auth/signup').send(payload);
+    await request(app).post('/api/v1/auth/signup').send(payload);
+    const res = await request(app).post('/api/v1/auth/signup').send(payload);
 
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
@@ -122,7 +122,7 @@ describe('POST /api/auth/signup', () => {
     });
 
     const res = await request(app)
-      .post('/api/auth/signup')
+      .post('/api/v1/auth/signup')
       .send(buildSignupPayload());
 
     expect(res.statusCode).toBe(500);
@@ -131,7 +131,7 @@ describe('POST /api/auth/signup', () => {
   });
 });
 
-describe('POST /api/auth/signin', () => {
+describe('POST /api/v1/auth/signin', () => {
   const credentials = {
     email: 'signin-user@example.com',
     password: 'password123',
@@ -148,7 +148,7 @@ describe('POST /api/auth/signin', () => {
   });
 
   it('returns 400 if required fields are missing', async () => {
-    const res = await request(app).post('/api/auth/signin').send({});
+    const res = await request(app).post('/api/v1/auth/signin').send({});
 
     expect(res.statusCode).toBe(400);
     expect(res.body.success).toBe(false);
@@ -157,7 +157,7 @@ describe('POST /api/auth/signin', () => {
 
   it('returns 400 for invalid email format', async () => {
     const res = await request(app)
-      .post('/api/auth/signin')
+      .post('/api/v1/auth/signin')
       .send({ email: 'invalid-email', password: 'password123' });
 
     expect(res.statusCode).toBe(400);
@@ -167,7 +167,7 @@ describe('POST /api/auth/signin', () => {
 
   it('returns 401 if no user exists for the given email', async () => {
     const res = await request(app)
-      .post('/api/auth/signin')
+      .post('/api/v1/auth/signin')
       .send({ email: 'nouser@example.com', password: 'whatever123' });
 
     expect(res.statusCode).toBe(401);
@@ -177,7 +177,7 @@ describe('POST /api/auth/signin', () => {
 
   it('returns 401 for an incorrect password', async () => {
     const res = await request(app)
-      .post('/api/auth/signin')
+      .post('/api/v1/auth/signin')
       .send({ email: credentials.email, password: 'wrongpassword' });
 
     expect(res.statusCode).toBe(401);
@@ -187,12 +187,12 @@ describe('POST /api/auth/signin', () => {
 
   it('returns identical status and body for non-existent user and wrong password failure cases', async () => {
     const resNoUser = await request(app)
-      .post('/api/auth/signin')
+      .post('/api/v1/auth/signin')
       .set('x-request-id', 'test-correlation-id')
       .send({ email: 'nouser@example.com', password: 'whatever123' });
 
     const resWrongPassword = await request(app)
-      .post('/api/auth/signin')
+      .post('/api/v1/auth/signin')
       .set('x-request-id', 'test-correlation-id')
       .send({ email: credentials.email, password: 'wrongpassword' });
 
@@ -203,7 +203,9 @@ describe('POST /api/auth/signin', () => {
   });
 
   it('returns 200 and a token for valid credentials', async () => {
-    const res = await request(app).post('/api/auth/signin').send(credentials);
+    const res = await request(app)
+      .post('/api/v1/auth/signin')
+      .send(credentials);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
@@ -216,7 +218,9 @@ describe('POST /api/auth/signin', () => {
       throw new Error('Simulated signin error');
     });
 
-    const res = await request(app).post('/api/auth/signin').send(credentials);
+    const res = await request(app)
+      .post('/api/v1/auth/signin')
+      .send(credentials);
 
     expect(res.statusCode).toBe(500);
     expect(res.body.success).toBe(false);
@@ -226,7 +230,7 @@ describe('POST /api/auth/signin', () => {
 
 describe('Middleware: protect (token validation)', () => {
   it('returns 401 if no token is provided', async () => {
-    const res = await request(app).get('/api/auth/getUser');
+    const res = await request(app).get('/api/v1/users/me');
 
     expect(res.statusCode).toBe(401);
     expect(res.body.success).toBe(false);
@@ -235,7 +239,7 @@ describe('Middleware: protect (token validation)', () => {
 
   it('returns 401 for a malformed token', async () => {
     const res = await request(app)
-      .get('/api/auth/getUser')
+      .get('/api/v1/users/me')
       .set('Authorization', 'Bearer not-a-real-token');
 
     expect(res.statusCode).toBe(401);
@@ -248,7 +252,7 @@ describe('Middleware: protect (token validation)', () => {
     const expiredToken = signToken(user._id, { expiresIn: -10 });
 
     const res = await request(app)
-      .get('/api/auth/getUser')
+      .get('/api/v1/users/me')
       .set('Authorization', `Bearer ${expiredToken}`);
 
     expect(res.statusCode).toBe(401);
@@ -257,12 +261,12 @@ describe('Middleware: protect (token validation)', () => {
   });
 });
 
-describe('GET /api/auth/getUser', () => {
+describe('GET /api/v1/users/me', () => {
   it("returns the authenticated user's data without the password field", async () => {
     const { user, token } = await createUserAndToken();
 
     const res = await request(app)
-      .get('/api/auth/getUser')
+      .get('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.statusCode).toBe(200);
@@ -277,7 +281,7 @@ describe('GET /api/auth/getUser', () => {
     const token = signToken(fakeId);
 
     const res = await request(app)
-      .get('/api/auth/getUser')
+      .get('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.statusCode).toBe(404);
@@ -289,7 +293,7 @@ describe('GET /api/auth/getUser', () => {
     const token = signToken('not-a-valid-object-id');
 
     const res = await request(app)
-      .get('/api/auth/getUser')
+      .get('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.statusCode).toBe(500);
@@ -305,7 +309,7 @@ describe('GET /api/auth/getUser', () => {
     });
 
     const res = await request(app)
-      .get('/api/auth/getUser')
+      .get('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.statusCode).toBe(500);
@@ -314,10 +318,10 @@ describe('GET /api/auth/getUser', () => {
   });
 });
 
-describe('PUT /api/auth/updateUser', () => {
+describe('PUT /api/v1/users/me', () => {
   it('returns 401 if no token is provided', async () => {
     const res = await request(app)
-      .put('/api/auth/updateUser')
+      .put('/api/v1/users/me')
       .send({ name: 'No Token' });
 
     expect(res.statusCode).toBe(401);
@@ -327,7 +331,7 @@ describe('PUT /api/auth/updateUser', () => {
 
   it('returns 401 for an invalid token', async () => {
     const res = await request(app)
-      .put('/api/auth/updateUser')
+      .put('/api/v1/users/me')
       .set('Authorization', 'Bearer invalidtoken')
       .send({ name: 'Bad Token' });
 
@@ -340,7 +344,7 @@ describe('PUT /api/auth/updateUser', () => {
     const { token } = await createUserAndToken();
 
     const res = await request(app)
-      .put('/api/auth/updateUser')
+      .put('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`)
       .send({ email: 'invalid-email' });
 
@@ -353,7 +357,7 @@ describe('PUT /api/auth/updateUser', () => {
     const { token } = await createUserAndToken({ name: 'Original Name' });
 
     const res = await request(app)
-      .put('/api/auth/updateUser')
+      .put('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`)
       .send({
         name: 'Updated Name',
@@ -372,7 +376,7 @@ describe('PUT /api/auth/updateUser', () => {
     const newEmail = `new_${Date.now()}@example.com`;
 
     const res = await request(app)
-      .put('/api/auth/updateUser')
+      .put('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`)
       .send({ email: newEmail });
 
@@ -390,7 +394,7 @@ describe('PUT /api/auth/updateUser', () => {
     const { token } = await createUserAndToken();
 
     const res = await request(app)
-      .put('/api/auth/updateUser')
+      .put('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`)
       .send({ email: 'taken@example.com' });
 
@@ -403,7 +407,7 @@ describe('PUT /api/auth/updateUser', () => {
     const { user, token } = await createUserAndToken();
 
     const res = await request(app)
-      .put('/api/auth/updateUser')
+      .put('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`)
       .send({ password: 'newSecurePassword' });
 
@@ -421,7 +425,7 @@ describe('PUT /api/auth/updateUser', () => {
     const token = signToken(fakeId);
 
     const res = await request(app)
-      .put('/api/auth/updateUser')
+      .put('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`)
       .send({ name: "Doesn't Matter" });
 
@@ -438,7 +442,7 @@ describe('PUT /api/auth/updateUser', () => {
     });
 
     const res = await request(app)
-      .put('/api/auth/updateUser')
+      .put('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 'Test' });
 
@@ -448,9 +452,9 @@ describe('PUT /api/auth/updateUser', () => {
   });
 });
 
-describe('DELETE /api/auth/deleteUser', () => {
+describe('DELETE /api/v1/users/me', () => {
   it('returns 401 if no token is provided', async () => {
-    const res = await request(app).delete('/api/auth/deleteUser');
+    const res = await request(app).delete('/api/v1/users/me');
 
     expect(res.statusCode).toBe(401);
     expect(res.body.success).toBe(false);
@@ -459,7 +463,7 @@ describe('DELETE /api/auth/deleteUser', () => {
 
   it('returns 401 for an invalid token', async () => {
     const res = await request(app)
-      .delete('/api/auth/deleteUser')
+      .delete('/api/v1/users/me')
       .set('Authorization', 'Bearer invalidtoken');
 
     expect(res.statusCode).toBe(401);
@@ -472,7 +476,7 @@ describe('DELETE /api/auth/deleteUser', () => {
     const token = signToken(fakeId);
 
     const res = await request(app)
-      .delete('/api/auth/deleteUser')
+      .delete('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.statusCode).toBe(404);
@@ -488,7 +492,7 @@ describe('DELETE /api/auth/deleteUser', () => {
     });
 
     const res = await request(app)
-      .delete('/api/auth/deleteUser')
+      .delete('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.statusCode).toBe(500);
@@ -503,7 +507,7 @@ describe('DELETE /api/auth/deleteUser', () => {
     cloudinary.api.delete_resources.mockResolvedValueOnce({});
 
     const res = await request(app)
-      .delete('/api/auth/deleteUser')
+      .delete('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.statusCode).toBe(200);
@@ -524,7 +528,7 @@ describe('DELETE /api/auth/deleteUser', () => {
     const { user, token } = await createUserAndToken({ profileImageUrl: null });
 
     const res = await request(app)
-      .delete('/api/auth/deleteUser')
+      .delete('/api/v1/users/me')
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.statusCode).toBe(200);
@@ -534,9 +538,9 @@ describe('DELETE /api/auth/deleteUser', () => {
   });
 });
 
-describe('POST /api/auth/upload-image (auth boundary)', () => {
+describe('POST /api/v1/auth/upload-image (auth boundary)', () => {
   it('returns 401 if no token is provided', async () => {
-    const res = await request(app).post('/api/auth/upload-image');
+    const res = await request(app).post('/api/v1/auth/upload-image');
 
     expect(res.statusCode).toBe(401);
     expect(res.body.success).toBe(false);
@@ -545,7 +549,7 @@ describe('POST /api/auth/upload-image (auth boundary)', () => {
 
   it('returns 401 for an invalid token', async () => {
     const res = await request(app)
-      .post('/api/auth/upload-image')
+      .post('/api/v1/auth/upload-image')
       .set('Authorization', 'Bearer invalidtoken');
 
     expect(res.statusCode).toBe(401);
@@ -554,9 +558,9 @@ describe('POST /api/auth/upload-image (auth boundary)', () => {
   });
 });
 
-describe('PUT /api/auth/update-image (auth boundary)', () => {
+describe('PUT /api/v1/users/me/image (auth boundary)', () => {
   it('returns 401 if no token is provided', async () => {
-    const res = await request(app).put('/api/auth/update-image');
+    const res = await request(app).put('/api/v1/users/me/image');
 
     expect(res.statusCode).toBe(401);
     expect(res.body.success).toBe(false);
@@ -565,7 +569,7 @@ describe('PUT /api/auth/update-image (auth boundary)', () => {
 
   it('returns 401 for an invalid token', async () => {
     const res = await request(app)
-      .put('/api/auth/update-image')
+      .put('/api/v1/users/me/image')
       .set('Authorization', 'Bearer invalidtoken');
 
     expect(res.statusCode).toBe(401);

@@ -12,7 +12,7 @@ const {
 const router = express.Router();
 
 router.get('/', protect, getAllIncome);
-router.post('/add', protect, validate(addIncomeSchema), addIncome);
+router.post('/', protect, validate(addIncomeSchema), addIncome);
 router.delete('/:id', protect, deleteIncome);
 router.get('/download', protect, downloadIncomeExcel);
 
