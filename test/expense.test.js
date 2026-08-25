@@ -151,12 +151,59 @@ describe('Expense API', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.length).toBe(2);
+      expect(res.body.meta).toEqual({
+        nextCursor: null,
+        hasMore: false,
+      });
+    });
+
+    it('should support cursor-based pagination with 25 records', async () => {
+      const baseDate = new Date('2025-01-01T00:00:00.000Z');
+      const expenses = Array.from({ length: 25 }, (_, i) => ({
+        userId: global.testUserId,
+        icon: '💵',
+        category: `Category ${i + 1}`,
+        amount: (i + 1) * 10,
+        date: new Date(baseDate.getTime() + i * 1000 * 60),
+      }));
+      await Expense.insertMany(expenses);
+
+      // Page 1: Request limit=20
+      const res1 = await request(app).get('/api/v1/expenses?limit=20');
+      expect(res1.statusCode).toBe(200);
+      expect(res1.body.success).toBe(true);
+      expect(res1.body.data).toHaveLength(20);
+      expect(res1.body.meta.hasMore).toBe(true);
+      expect(res1.body.meta.nextCursor).toBeDefined();
+      expect(typeof res1.body.meta.nextCursor).toBe('string');
+
+      const nextCursor = res1.body.meta.nextCursor;
+      expect(nextCursor).toBe(res1.body.data[19]._id);
+
+      // Page 2: Request limit=20 with cursor
+      const res2 = await request(app).get(
+        `/api/v1/expenses?limit=20&cursor=${nextCursor}`
+      );
+      expect(res2.statusCode).toBe(200);
+      expect(res2.body.success).toBe(true);
+      expect(res2.body.data).toHaveLength(5);
+      expect(res2.body.meta.hasMore).toBe(false);
+      expect(res2.body.meta.nextCursor).toBeNull();
+
+      // Ensure no overlapping ids and all 25 returned
+      const page1Ids = res1.body.data.map((d) => d._id);
+      const page2Ids = res2.body.data.map((d) => d._id);
+      const allIds = [...page1Ids, ...page2Ids];
+      const uniqueIds = new Set(allIds);
+      expect(uniqueIds.size).toBe(25);
     });
 
     it('should return 500 if getting expenses throws an error', async () => {
       const originalFind = Expense.find;
       Expense.find = jest.fn(() => ({
-        sort: jest.fn().mockRejectedValue(new Error('Mock get error')),
+        sort: jest.fn(() => ({
+          limit: jest.fn().mockRejectedValue(new Error('Mock get error')),
+        })),
       }));
 
       const res = await request(app).get('/api/v1/expenses');

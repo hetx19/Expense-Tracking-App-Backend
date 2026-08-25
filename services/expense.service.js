@@ -11,10 +11,11 @@ const addExpense = async ({ userId, icon, category, amount, date }) => {
   });
 };
 
-const getAllExpenses = async (userId) => {
+const getAllExpenses = async (userId, options) => {
   return await transactionService.getTransactionsByUser(
     expenseRepository,
-    userId
+    userId,
+    options
   );
 };
 

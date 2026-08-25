@@ -1,8 +1,48 @@
 const mongoose = require('mongoose');
 const Expense = require('../models/Expense');
 
-const findByUser = async (userId) => {
-  return await Expense.find({ userId }).sort({ date: -1 });
+const findByUser = async (
+  userId,
+  { limit = 20, cursor, all = false } = {}
+) => {
+  if (all) {
+    const items = await Expense.find({ userId }).sort({ date: -1, _id: -1 });
+    return { data: items, meta: { nextCursor: null, hasMore: false } };
+  }
+
+  const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+  const query = { userId };
+
+  if (cursor) {
+    if (!mongoose.Types.ObjectId.isValid(cursor)) {
+      return { data: [], meta: { nextCursor: null, hasMore: false } };
+    }
+    const cursorDoc = await Expense.findById(cursor);
+    if (!cursorDoc) {
+      return { data: [], meta: { nextCursor: null, hasMore: false } };
+    }
+    query.$or = [
+      { date: { $lt: cursorDoc.date } },
+      { date: cursorDoc.date, _id: { $lt: cursorDoc._id } },
+    ];
+  }
+
+  const items = await Expense.find(query)
+    .sort({ date: -1, _id: -1 })
+    .limit(parsedLimit + 1);
+
+  const hasMore = items.length > parsedLimit;
+  const data = hasMore ? items.slice(0, parsedLimit) : items;
+  const nextCursor =
+    hasMore && data.length > 0 ? data[data.length - 1]._id.toString() : null;
+
+  return {
+    data,
+    meta: {
+      nextCursor,
+      hasMore,
+    },
+  };
 };
 
 const findOwnedById = async (id, userId) => {

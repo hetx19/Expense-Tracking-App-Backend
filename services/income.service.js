@@ -11,10 +11,11 @@ const addIncome = async ({ userId, icon, source, amount, date }) => {
   });
 };
 
-const getAllIncome = async (userId) => {
+const getAllIncome = async (userId, options) => {
   return await transactionService.getTransactionsByUser(
     incomeRepository,
-    userId
+    userId,
+    options
   );
 };
 

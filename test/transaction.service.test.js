@@ -70,17 +70,22 @@ describe('Transaction Service Shared Parameterized Tests', () => {
         expect(result).toEqual(mockSaved);
       });
 
-      it('should fetch transactions by user', async () => {
-        const mockList = [{ _id: 'tx1' }, { _id: 'tx2' }];
-        mockRepo.findByUser.mockResolvedValue(mockList);
+      it('should fetch transactions by user with options', async () => {
+        const mockResult = {
+          data: [{ _id: 'tx1' }, { _id: 'tx2' }],
+          meta: { nextCursor: null, hasMore: false },
+        };
+        mockRepo.findByUser.mockResolvedValue(mockResult);
 
+        const options = { limit: 10, cursor: 'tx0' };
         const result = await transactionService.getTransactionsByUser(
           mockRepo,
-          'user123'
+          'user123',
+          options
         );
 
-        expect(mockRepo.findByUser).toHaveBeenCalledWith('user123');
-        expect(result).toEqual(mockList);
+        expect(mockRepo.findByUser).toHaveBeenCalledWith('user123', options);
+        expect(result).toEqual(mockResult);
       });
 
       it('should delete transaction when found', async () => {
@@ -116,11 +121,11 @@ describe('Transaction Service Shared Parameterized Tests', () => {
         );
       });
 
-      it('should generate Excel buffer for user transactions', async () => {
+      it('should generate Excel buffer for user transactions when repo returns raw array or object', async () => {
         const mockItems = [
           { [fieldKey]: fieldVal, amount: 50, date: new Date('2025-08-01') },
         ];
-        mockRepo.findByUser.mockResolvedValue(mockItems);
+        mockRepo.findByUser.mockResolvedValue({ data: mockItems });
 
         const buffer = await transactionService.generateTransactionExcel(
           mockRepo,
@@ -129,9 +134,31 @@ describe('Transaction Service Shared Parameterized Tests', () => {
           mapItem
         );
 
-        expect(mockRepo.findByUser).toHaveBeenCalledWith('user123');
+        expect(mockRepo.findByUser).toHaveBeenCalledWith('user123', {
+          all: true,
+        });
         expect(Buffer.isBuffer(buffer)).toBe(true);
         expect(buffer.length).toBeGreaterThan(0);
+
+        // Also test raw array branch
+        mockRepo.findByUser.mockResolvedValue(mockItems);
+        const buffer2 = await transactionService.generateTransactionExcel(
+          mockRepo,
+          'user123',
+          sheetName,
+          mapItem
+        );
+        expect(Buffer.isBuffer(buffer2)).toBe(true);
+
+        // Also test null result fallback
+        mockRepo.findByUser.mockResolvedValue(null);
+        const buffer3 = await transactionService.generateTransactionExcel(
+          mockRepo,
+          'user123',
+          sheetName,
+          mapItem
+        );
+        expect(Buffer.isBuffer(buffer3)).toBe(true);
       });
     }
   );

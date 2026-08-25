@@ -9,15 +9,133 @@ describe('Expense Repository Unit Tests', () => {
   });
 
   describe('findByUser', () => {
-    it('should find expenses by userId sorted by date descending', async () => {
-      const mockSort = jest.fn().mockResolvedValue(['exp1', 'exp2']);
+    it('should find expenses with default pagination (limit 20)', async () => {
+      const mockItems = [{ _id: 'exp1' }, { _id: 'exp2' }];
+      const mockLimit = jest.fn().mockResolvedValue(mockItems);
+      const mockSort = jest.fn().mockReturnValue({ limit: mockLimit });
       Expense.find.mockReturnValue({ sort: mockSort });
 
       const result = await expenseRepository.findByUser('user123');
 
       expect(Expense.find).toHaveBeenCalledWith({ userId: 'user123' });
-      expect(mockSort).toHaveBeenCalledWith({ date: -1 });
-      expect(result).toEqual(['exp1', 'exp2']);
+      expect(mockSort).toHaveBeenCalledWith({ date: -1, _id: -1 });
+      expect(mockLimit).toHaveBeenCalledWith(21);
+      expect(result).toEqual({
+        data: mockItems,
+        meta: {
+          nextCursor: null,
+          hasMore: false,
+        },
+      });
+    });
+
+    it('should return nextCursor and hasMore: true when items exceed limit', async () => {
+      const mockItems = Array.from({ length: 21 }, (_, i) => ({
+        _id: `exp${i + 1}`,
+      }));
+      const mockLimit = jest.fn().mockResolvedValue(mockItems);
+      const mockSort = jest.fn().mockReturnValue({ limit: mockLimit });
+      Expense.find.mockReturnValue({ sort: mockSort });
+
+      const result = await expenseRepository.findByUser('user123', {
+        limit: 20,
+      });
+
+      expect(mockLimit).toHaveBeenCalledWith(21);
+      expect(result.data).toHaveLength(20);
+      expect(result.meta).toEqual({
+        nextCursor: 'exp20',
+        hasMore: true,
+      });
+    });
+
+    it('should clamp limit between 1 and 100 and default for invalid values', async () => {
+      const mockLimit = jest.fn().mockResolvedValue([]);
+      const mockSort = jest.fn().mockReturnValue({ limit: mockLimit });
+      Expense.find.mockReturnValue({ sort: mockSort });
+
+      await expenseRepository.findByUser('user123', { limit: 200 });
+      expect(mockLimit).toHaveBeenCalledWith(101);
+
+      await expenseRepository.findByUser('user123', { limit: -10 });
+      expect(mockLimit).toHaveBeenCalledWith(2);
+
+      await expenseRepository.findByUser('user123', { limit: 'invalid' });
+      expect(mockLimit).toHaveBeenCalledWith(21);
+    });
+
+    it('should filter by cursor when valid cursor doc is found', async () => {
+      const validObjectId = '507f1f77bcf86cd799439011';
+      const cursorDate = new Date('2025-07-20');
+      Expense.findById.mockResolvedValue({
+        _id: validObjectId,
+        date: cursorDate,
+      });
+
+      const mockItems = [{ _id: 'exp21' }];
+      const mockLimit = jest.fn().mockResolvedValue(mockItems);
+      const mockSort = jest.fn().mockReturnValue({ limit: mockLimit });
+      Expense.find.mockReturnValue({ sort: mockSort });
+
+      const result = await expenseRepository.findByUser('user123', {
+        limit: 20,
+        cursor: validObjectId,
+      });
+
+      expect(Expense.findById).toHaveBeenCalledWith(validObjectId);
+      expect(Expense.find).toHaveBeenCalledWith({
+        userId: 'user123',
+        $or: [
+          { date: { $lt: cursorDate } },
+          { date: cursorDate, _id: { $lt: validObjectId } },
+        ],
+      });
+      expect(result.data).toEqual(mockItems);
+    });
+
+    it('should return empty result if cursor is invalid ObjectId', async () => {
+      const result = await expenseRepository.findByUser('user123', {
+        cursor: 'invalid-id',
+      });
+
+      expect(result).toEqual({
+        data: [],
+        meta: { nextCursor: null, hasMore: false },
+      });
+    });
+
+    it('should return empty result if cursor doc is not found', async () => {
+      const validObjectId = '507f1f77bcf86cd799439011';
+      Expense.findById.mockResolvedValue(null);
+
+      const result = await expenseRepository.findByUser('user123', {
+        cursor: validObjectId,
+      });
+
+      expect(result).toEqual({
+        data: [],
+        meta: { nextCursor: null, hasMore: false },
+      });
+    });
+
+    it('should return all items without limit when all is true', async () => {
+      const mockItems = [{ _id: 'exp1' }, { _id: 'exp2' }];
+      const mockSort = jest.fn().mockResolvedValue(mockItems);
+      Expense.find.mockReturnValue({ sort: mockSort });
+
+      const result = await expenseRepository.findByUser('user123', {
+        all: true,
+      });
+
+      expect(Expense.find).toHaveBeenCalledWith({ userId: 'user123' });
+      expect(mockSort).toHaveBeenCalledWith({ date: -1, _id: -1 });
+      expect(result).toEqual({
+        data: mockItems,
+        meta: {
+          nextCursor: null,
+          hasMore: false,
+        },
+      });
     });
   });
 

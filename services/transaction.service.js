@@ -9,8 +9,8 @@ const addTransaction = async (repository, data) => {
   });
 };
 
-const getTransactionsByUser = async (repository, userId) => {
-  return await repository.findByUser(userId);
+const getTransactionsByUser = async (repository, userId, options) => {
+  return await repository.findByUser(userId, options);
 };
 
 const deleteTransaction = async (repository, id, userId, resourceName) => {
@@ -27,7 +27,8 @@ const generateTransactionExcel = async (
   sheetName,
   mapItem
 ) => {
-  const items = await repository.findByUser(userId);
+  const result = await repository.findByUser(userId, { all: true });
+  const items = Array.isArray(result) ? result : result?.data || [];
   const data = items.map(mapItem);
 
   const wb = xlsx.utils.book_new();

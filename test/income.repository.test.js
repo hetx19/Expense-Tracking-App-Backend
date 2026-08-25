@@ -9,15 +9,133 @@ describe('Income Repository Unit Tests', () => {
   });
 
   describe('findByUser', () => {
-    it('should find income by userId sorted by date descending', async () => {
-      const mockSort = jest.fn().mockResolvedValue(['inc1', 'inc2']);
+    it('should find income with default pagination (limit 20)', async () => {
+      const mockItems = [{ _id: 'inc1' }, { _id: 'inc2' }];
+      const mockLimit = jest.fn().mockResolvedValue(mockItems);
+      const mockSort = jest.fn().mockReturnValue({ limit: mockLimit });
       Income.find.mockReturnValue({ sort: mockSort });
 
       const result = await incomeRepository.findByUser('user123');
 
       expect(Income.find).toHaveBeenCalledWith({ userId: 'user123' });
-      expect(mockSort).toHaveBeenCalledWith({ date: -1 });
-      expect(result).toEqual(['inc1', 'inc2']);
+      expect(mockSort).toHaveBeenCalledWith({ date: -1, _id: -1 });
+      expect(mockLimit).toHaveBeenCalledWith(21);
+      expect(result).toEqual({
+        data: mockItems,
+        meta: {
+          nextCursor: null,
+          hasMore: false,
+        },
+      });
+    });
+
+    it('should return nextCursor and hasMore: true when items exceed limit', async () => {
+      const mockItems = Array.from({ length: 21 }, (_, i) => ({
+        _id: `inc${i + 1}`,
+      }));
+      const mockLimit = jest.fn().mockResolvedValue(mockItems);
+      const mockSort = jest.fn().mockReturnValue({ limit: mockLimit });
+      Income.find.mockReturnValue({ sort: mockSort });
+
+      const result = await incomeRepository.findByUser('user123', {
+        limit: 20,
+      });
+
+      expect(mockLimit).toHaveBeenCalledWith(21);
+      expect(result.data).toHaveLength(20);
+      expect(result.meta).toEqual({
+        nextCursor: 'inc20',
+        hasMore: true,
+      });
+    });
+
+    it('should clamp limit between 1 and 100 and default for invalid values', async () => {
+      const mockLimit = jest.fn().mockResolvedValue([]);
+      const mockSort = jest.fn().mockReturnValue({ limit: mockLimit });
+      Income.find.mockReturnValue({ sort: mockSort });
+
+      await incomeRepository.findByUser('user123', { limit: 200 });
+      expect(mockLimit).toHaveBeenCalledWith(101);
+
+      await incomeRepository.findByUser('user123', { limit: -10 });
+      expect(mockLimit).toHaveBeenCalledWith(2);
+
+      await incomeRepository.findByUser('user123', { limit: 'invalid' });
+      expect(mockLimit).toHaveBeenCalledWith(21);
+    });
+
+    it('should filter by cursor when valid cursor doc is found', async () => {
+      const validObjectId = '507f1f77bcf86cd799439011';
+      const cursorDate = new Date('2025-07-20');
+      Income.findById.mockResolvedValue({
+        _id: validObjectId,
+        date: cursorDate,
+      });
+
+      const mockItems = [{ _id: 'inc21' }];
+      const mockLimit = jest.fn().mockResolvedValue(mockItems);
+      const mockSort = jest.fn().mockReturnValue({ limit: mockLimit });
+      Income.find.mockReturnValue({ sort: mockSort });
+
+      const result = await incomeRepository.findByUser('user123', {
+        limit: 20,
+        cursor: validObjectId,
+      });
+
+      expect(Income.findById).toHaveBeenCalledWith(validObjectId);
+      expect(Income.find).toHaveBeenCalledWith({
+        userId: 'user123',
+        $or: [
+          { date: { $lt: cursorDate } },
+          { date: cursorDate, _id: { $lt: validObjectId } },
+        ],
+      });
+      expect(result.data).toEqual(mockItems);
+    });
+
+    it('should return empty result if cursor is invalid ObjectId', async () => {
+      const result = await incomeRepository.findByUser('user123', {
+        cursor: 'invalid-id',
+      });
+
+      expect(result).toEqual({
+        data: [],
+        meta: { nextCursor: null, hasMore: false },
+      });
+    });
+
+    it('should return empty result if cursor doc is not found', async () => {
+      const validObjectId = '507f1f77bcf86cd799439011';
+      Income.findById.mockResolvedValue(null);
+
+      const result = await incomeRepository.findByUser('user123', {
+        cursor: validObjectId,
+      });
+
+      expect(result).toEqual({
+        data: [],
+        meta: { nextCursor: null, hasMore: false },
+      });
+    });
+
+    it('should return all items without limit when all is true', async () => {
+      const mockItems = [{ _id: 'inc1' }, { _id: 'inc2' }];
+      const mockSort = jest.fn().mockResolvedValue(mockItems);
+      Income.find.mockReturnValue({ sort: mockSort });
+
+      const result = await incomeRepository.findByUser('user123', {
+        all: true,
+      });
+
+      expect(Income.find).toHaveBeenCalledWith({ userId: 'user123' });
+      expect(mockSort).toHaveBeenCalledWith({ date: -1, _id: -1 });
+      expect(result).toEqual({
+        data: mockItems,
+        meta: {
+          nextCursor: null,
+          hasMore: false,
+        },
+      });
     });
   });
 

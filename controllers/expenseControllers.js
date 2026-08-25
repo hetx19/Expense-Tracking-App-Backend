@@ -10,8 +10,12 @@ const addExpense = asyncHandler(async (req, res) => {
 });
 
 const getAllExpense = asyncHandler(async (req, res) => {
-  const data = await expenseService.getAllExpenses(req.user._id);
-  res.status(200).json({ success: true, data });
+  const { limit, cursor } = req.query;
+  const { data, meta } = await expenseService.getAllExpenses(req.user._id, {
+    limit,
+    cursor,
+  });
+  res.status(200).json({ success: true, data, meta });
 });
 
 const deleteExpense = asyncHandler(async (req, res) => {

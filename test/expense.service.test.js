@@ -42,18 +42,25 @@ describe('Expense Service Unit Tests', () => {
   });
 
   describe('getAllExpenses', () => {
-    it('should return expenses for a given user', async () => {
-      const mockExpenses = [
-        { _id: 'exp1', category: 'Food', amount: 10 },
-        { _id: 'exp2', category: 'Transport', amount: 15 },
-      ];
+    it('should return expenses for a given user with options', async () => {
+      const mockResult = {
+        data: [
+          { _id: 'exp1', category: 'Food', amount: 10 },
+          { _id: 'exp2', category: 'Transport', amount: 15 },
+        ],
+        meta: { nextCursor: null, hasMore: false },
+      };
 
-      expenseRepository.findByUser.mockResolvedValue(mockExpenses);
+      expenseRepository.findByUser.mockResolvedValue(mockResult);
 
-      const result = await expenseService.getAllExpenses('user123');
+      const options = { limit: 10, cursor: 'exp0' };
+      const result = await expenseService.getAllExpenses('user123', options);
 
-      expect(expenseRepository.findByUser).toHaveBeenCalledWith('user123');
-      expect(result).toEqual(mockExpenses);
+      expect(expenseRepository.findByUser).toHaveBeenCalledWith(
+        'user123',
+        options
+      );
+      expect(result).toEqual(mockResult);
     });
   });
 
@@ -91,11 +98,13 @@ describe('Expense Service Unit Tests', () => {
         { category: 'Gym', amount: 50, date: new Date('2025-07-20') },
       ];
 
-      expenseRepository.findByUser.mockResolvedValue(mockExpenses);
+      expenseRepository.findByUser.mockResolvedValue({ data: mockExpenses });
 
       const buffer = await expenseService.generateExpenseExcel('user123');
 
-      expect(expenseRepository.findByUser).toHaveBeenCalledWith('user123');
+      expect(expenseRepository.findByUser).toHaveBeenCalledWith('user123', {
+        all: true,
+      });
       expect(Buffer.isBuffer(buffer)).toBe(true);
       expect(buffer.length).toBeGreaterThan(0);
     });

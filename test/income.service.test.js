@@ -42,18 +42,25 @@ describe('Income Service Unit Tests', () => {
   });
 
   describe('getAllIncome', () => {
-    it('should return income for a given user', async () => {
-      const mockIncomeList = [
-        { _id: 'inc1', source: 'Salary', amount: 5000 },
-        { _id: 'inc2', source: 'Freelance', amount: 500 },
-      ];
+    it('should return income for a given user with options', async () => {
+      const mockResult = {
+        data: [
+          { _id: 'inc1', source: 'Salary', amount: 5000 },
+          { _id: 'inc2', source: 'Freelance', amount: 500 },
+        ],
+        meta: { nextCursor: null, hasMore: false },
+      };
 
-      incomeRepository.findByUser.mockResolvedValue(mockIncomeList);
+      incomeRepository.findByUser.mockResolvedValue(mockResult);
 
-      const result = await incomeService.getAllIncome('user123');
+      const options = { limit: 10, cursor: 'inc0' };
+      const result = await incomeService.getAllIncome('user123', options);
 
-      expect(incomeRepository.findByUser).toHaveBeenCalledWith('user123');
-      expect(result).toEqual(mockIncomeList);
+      expect(incomeRepository.findByUser).toHaveBeenCalledWith(
+        'user123',
+        options
+      );
+      expect(result).toEqual(mockResult);
     });
   });
 
@@ -91,11 +98,13 @@ describe('Income Service Unit Tests', () => {
         { source: 'Investments', amount: 200, date: new Date('2025-07-20') },
       ];
 
-      incomeRepository.findByUser.mockResolvedValue(mockIncomeList);
+      incomeRepository.findByUser.mockResolvedValue({ data: mockIncomeList });
 
       const buffer = await incomeService.generateIncomeExcel('user123');
 
-      expect(incomeRepository.findByUser).toHaveBeenCalledWith('user123');
+      expect(incomeRepository.findByUser).toHaveBeenCalledWith('user123', {
+        all: true,
+      });
       expect(Buffer.isBuffer(buffer)).toBe(true);
       expect(buffer.length).toBeGreaterThan(0);
     });

@@ -10,8 +10,12 @@ const addIncome = asyncHandler(async (req, res) => {
 });
 
 const getAllIncome = asyncHandler(async (req, res) => {
-  const data = await incomeService.getAllIncome(req.user._id);
-  res.status(200).json({ success: true, data });
+  const { limit, cursor } = req.query;
+  const { data, meta } = await incomeService.getAllIncome(req.user._id, {
+    limit,
+    cursor,
+  });
+  res.status(200).json({ success: true, data, meta });
 });
 
 const deleteIncome = asyncHandler(async (req, res) => {
