@@ -1,42 +1,24 @@
-const xlsx = require("xlsx");
-const Income = require("../models/Income");
-const AppError = require("../utils/AppError");
+const incomeService = require("../services/income.service");
 const asyncHandler = require("../utils/asyncHandler");
 
 const addIncome = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-  const { icon, source, amount, date } = req.body;
-
-  const newIncome = new Income({
-    userId,
-    icon,
-    source,
-    amount,
-    date: new Date(date),
+  const newIncome = await incomeService.addIncome({
+    userId: req.user._id,
+    ...req.body,
   });
-
-  await newIncome.save();
-
   res.status(200).json(newIncome);
 });
 
 const getAllIncome = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-  const income = await Income.find({ userId }).sort({ date: -1 });
-
+  const income = await incomeService.getAllIncome(req.user._id);
   res.json(income);
 });
 
 const deleteIncome = asyncHandler(async (req, res) => {
-  const deletedIncome = await Income.findOneAndDelete({
-    _id: req.params.id,
-    userId: req.user._id,
-  });
-
-  if (!deletedIncome) {
-    throw new AppError("Income Not Found", 404);
-  }
-
+  const deletedIncome = await incomeService.deleteIncome(
+    req.params.id,
+    req.user._id,
+  );
   res.json({
     message: "Income Deleted Successfully",
     deletedIncome,
@@ -44,19 +26,7 @@ const deleteIncome = asyncHandler(async (req, res) => {
 });
 
 const downloadIncomeExcel = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-  const income = await Income.find({ userId }).sort({ date: -1 });
-
-  const data = income.map((item) => ({
-    Source: item.source,
-    Amount: item.amount,
-    Date: item.date,
-  }));
-
-  const wb = xlsx.utils.book_new();
-  const ws = xlsx.utils.json_to_sheet(data);
-  xlsx.utils.book_append_sheet(wb, ws, "Income");
-  const buffer = xlsx.write(wb, { bookType: "xlsx", type: "buffer" });
+  const buffer = await incomeService.generateIncomeExcel(req.user._id);
   res.setHeader(
     "Content-Disposition",
     "attachment; filename=income-details.xlsx",
@@ -68,4 +38,9 @@ const downloadIncomeExcel = asyncHandler(async (req, res) => {
   res.status(200).send(buffer);
 });
 
-module.exports = { addIncome, getAllIncome, deleteIncome, downloadIncomeExcel };
+module.exports = {
+  addIncome,
+  getAllIncome,
+  deleteIncome,
+  downloadIncomeExcel,
+};

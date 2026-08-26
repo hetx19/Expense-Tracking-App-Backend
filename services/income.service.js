@@ -1,0 +1,48 @@
+const incomeRepository = require("../repositories/income.repository");
+const transactionService = require("./transaction.service");
+
+const addIncome = async ({ userId, icon, source, amount, date }) => {
+  return await transactionService.addTransaction(incomeRepository, {
+    userId,
+    icon,
+    source,
+    amount,
+    date,
+  });
+};
+
+const getAllIncome = async (userId) => {
+  return await transactionService.getTransactionsByUser(
+    incomeRepository,
+    userId,
+  );
+};
+
+const deleteIncome = async (id, userId) => {
+  return await transactionService.deleteTransaction(
+    incomeRepository,
+    id,
+    userId,
+    "Income",
+  );
+};
+
+const generateIncomeExcel = async (userId) => {
+  return await transactionService.generateTransactionExcel(
+    incomeRepository,
+    userId,
+    "Income",
+    (item) => ({
+      Source: item.source,
+      Amount: item.amount,
+      Date: item.date,
+    }),
+  );
+};
+
+module.exports = {
+  addIncome,
+  getAllIncome,
+  deleteIncome,
+  generateIncomeExcel,
+};
