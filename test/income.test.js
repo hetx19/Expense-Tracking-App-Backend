@@ -198,6 +198,163 @@ describe('Income API', () => {
       expect(uniqueIds.size).toBe(25);
     });
 
+    it('should filter income by source', async () => {
+      await Income.create([
+        {
+          userId: global.testUserId,
+          source: 'Salary',
+          amount: 5000,
+          date: new Date('2026-01-10'),
+        },
+        {
+          userId: global.testUserId,
+          source: 'Freelance',
+          amount: 1000,
+          date: new Date('2026-01-11'),
+        },
+        {
+          userId: global.testUserId,
+          source: 'Salary',
+          amount: 5500,
+          date: new Date('2026-01-12'),
+        },
+      ]);
+
+      const res = await request(app).get('/api/v1/incomes?source=Salary');
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveLength(2);
+      expect(res.body.data.every((item) => item.source === 'Salary')).toBe(true);
+    });
+
+    it('should filter income by date range (from and to)', async () => {
+      await Income.create([
+        {
+          userId: global.testUserId,
+          source: 'Salary',
+          amount: 2000,
+          date: new Date('2026-01-05'),
+        },
+        {
+          userId: global.testUserId,
+          source: 'Freelance',
+          amount: 1500,
+          date: new Date('2026-02-15'),
+        },
+        {
+          userId: global.testUserId,
+          source: 'Investments',
+          amount: 800,
+          date: new Date('2026-03-20'),
+        },
+      ]);
+
+      const res = await request(app).get(
+        '/api/v1/incomes?from=2026-02-01&to=2026-02-28'
+      );
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0].amount).toBe(1500);
+    });
+
+    it('should sort income by amount ascending and descending', async () => {
+      await Income.create([
+        {
+          userId: global.testUserId,
+          source: 'Dividends',
+          amount: 100,
+          date: new Date('2026-01-01'),
+        },
+        {
+          userId: global.testUserId,
+          source: 'Salary',
+          amount: 5000,
+          date: new Date('2026-01-02'),
+        },
+        {
+          userId: global.testUserId,
+          source: 'Freelance',
+          amount: 1200,
+          date: new Date('2026-01-03'),
+        },
+      ]);
+
+      // Ascending sort
+      const resAsc = await request(app).get('/api/v1/incomes?sort=amount');
+      expect(resAsc.statusCode).toBe(200);
+      expect(resAsc.body.data.map((d) => d.amount)).toEqual([100, 1200, 5000]);
+
+      // Descending sort
+      const resDesc = await request(app).get('/api/v1/incomes?sort=-amount');
+      expect(resDesc.statusCode).toBe(200);
+      expect(resDesc.body.data.map((d) => d.amount)).toEqual([5000, 1200, 100]);
+    });
+
+    it('should filter and sort income in combination', async () => {
+      await Income.create([
+        {
+          userId: global.testUserId,
+          source: 'Freelance',
+          amount: 400,
+          date: new Date('2026-01-10'),
+        },
+        {
+          userId: global.testUserId,
+          source: 'Freelance',
+          amount: 900,
+          date: new Date('2026-01-20'),
+        },
+        {
+          userId: global.testUserId,
+          source: 'Salary',
+          amount: 5000,
+          date: new Date('2026-01-15'),
+        },
+        {
+          userId: global.testUserId,
+          source: 'Freelance',
+          amount: 600,
+          date: new Date('2026-02-10'),
+        },
+      ]);
+
+      const res = await request(app).get(
+        '/api/v1/incomes?source=Freelance&from=2026-01-01&to=2026-01-31&sort=-amount'
+      );
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveLength(2);
+      expect(res.body.data[0].amount).toBe(900);
+      expect(res.body.data[1].amount).toBe(400);
+    });
+
+    it('should return 400 when query validation fails (invalid sort or date)', async () => {
+      // Invalid sort
+      const resSort = await request(app).get(
+        '/api/v1/incomes?sort=invalid_sort'
+      );
+      expect(resSort.statusCode).toBe(400);
+      expect(resSort.body.success).toBe(false);
+      expect(resSort.body.error.message).toContain('Invalid sort parameter');
+
+      // Invalid date format
+      const resDate = await request(app).get('/api/v1/incomes?from=not-a-date');
+      expect(resDate.statusCode).toBe(400);
+      expect(resDate.body.success).toBe(false);
+      expect(resDate.body.error.message).toBe('Invalid from date format');
+
+      // from date after to date
+      const resRange = await request(app).get(
+        '/api/v1/incomes?from=2026-02-01&to=2026-01-01'
+      );
+      expect(resRange.statusCode).toBe(400);
+      expect(resRange.body.success).toBe(false);
+      expect(resRange.body.error.message).toBe(
+        "'from' date must be before or equal to 'to' date"
+      );
+    });
+
     it('should return 500 if getting incomes throws an error', async () => {
       const originalFind = Income.find;
       Income.find = jest.fn(() => ({

@@ -10,10 +10,15 @@ const addIncome = asyncHandler(async (req, res) => {
 });
 
 const getAllIncome = asyncHandler(async (req, res) => {
-  const { limit, cursor } = req.query;
+  const { limit, cursor, source, category, from, to, sort } = req.query;
   const { data, meta } = await incomeService.getAllIncome(req.user._id, {
     limit,
     cursor,
+    source,
+    category,
+    from,
+    to,
+    sort,
   });
   res.status(200).json({ success: true, data, meta });
 });

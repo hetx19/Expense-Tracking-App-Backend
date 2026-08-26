@@ -198,6 +198,165 @@ describe('Expense API', () => {
       expect(uniqueIds.size).toBe(25);
     });
 
+    it('should filter expenses by category', async () => {
+      await Expense.create([
+        {
+          userId: global.testUserId,
+          category: 'Food',
+          amount: 20,
+          date: new Date('2026-01-10'),
+        },
+        {
+          userId: global.testUserId,
+          category: 'Travel',
+          amount: 50,
+          date: new Date('2026-01-11'),
+        },
+        {
+          userId: global.testUserId,
+          category: 'Food',
+          amount: 30,
+          date: new Date('2026-01-12'),
+        },
+      ]);
+
+      const res = await request(app).get('/api/v1/expenses?category=Food');
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveLength(2);
+      expect(res.body.data.every((item) => item.category === 'Food')).toBe(
+        true
+      );
+    });
+
+    it('should filter expenses by date range (from and to)', async () => {
+      await Expense.create([
+        {
+          userId: global.testUserId,
+          category: 'Food',
+          amount: 10,
+          date: new Date('2026-01-05'),
+        },
+        {
+          userId: global.testUserId,
+          category: 'Food',
+          amount: 20,
+          date: new Date('2026-02-15'),
+        },
+        {
+          userId: global.testUserId,
+          category: 'Food',
+          amount: 30,
+          date: new Date('2026-03-20'),
+        },
+      ]);
+
+      const res = await request(app).get(
+        '/api/v1/expenses?from=2026-02-01&to=2026-02-28'
+      );
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0].amount).toBe(20);
+    });
+
+    it('should sort expenses by amount ascending and descending', async () => {
+      await Expense.create([
+        {
+          userId: global.testUserId,
+          category: 'Food',
+          amount: 10,
+          date: new Date('2026-01-01'),
+        },
+        {
+          userId: global.testUserId,
+          category: 'Travel',
+          amount: 100,
+          date: new Date('2026-01-02'),
+        },
+        {
+          userId: global.testUserId,
+          category: 'Utilities',
+          amount: 50,
+          date: new Date('2026-01-03'),
+        },
+      ]);
+
+      // Ascending sort
+      const resAsc = await request(app).get('/api/v1/expenses?sort=amount');
+      expect(resAsc.statusCode).toBe(200);
+      expect(resAsc.body.data.map((d) => d.amount)).toEqual([10, 50, 100]);
+
+      // Descending sort
+      const resDesc = await request(app).get('/api/v1/expenses?sort=-amount');
+      expect(resDesc.statusCode).toBe(200);
+      expect(resDesc.body.data.map((d) => d.amount)).toEqual([100, 50, 10]);
+    });
+
+    it('should filter and sort expenses in combination', async () => {
+      await Expense.create([
+        {
+          userId: global.testUserId,
+          category: 'Food',
+          amount: 15,
+          date: new Date('2026-01-10'),
+        },
+        {
+          userId: global.testUserId,
+          category: 'Food',
+          amount: 45,
+          date: new Date('2026-01-20'),
+        },
+        {
+          userId: global.testUserId,
+          category: 'Travel',
+          amount: 90,
+          date: new Date('2026-01-15'),
+        },
+        {
+          userId: global.testUserId,
+          category: 'Food',
+          amount: 30,
+          date: new Date('2026-02-10'),
+        },
+      ]);
+
+      const res = await request(app).get(
+        '/api/v1/expenses?category=Food&from=2026-01-01&to=2026-01-31&sort=-amount'
+      );
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveLength(2);
+      expect(res.body.data[0].amount).toBe(45);
+      expect(res.body.data[1].amount).toBe(15);
+    });
+
+    it('should return 400 when query validation fails (invalid sort or date)', async () => {
+      // Invalid sort
+      const resSort = await request(app).get(
+        '/api/v1/expenses?sort=invalid_sort'
+      );
+      expect(resSort.statusCode).toBe(400);
+      expect(resSort.body.success).toBe(false);
+      expect(resSort.body.error.message).toContain('Invalid sort parameter');
+
+      // Invalid date format
+      const resDate = await request(app).get('/api/v1/expenses?from=not-a-date');
+      expect(resDate.statusCode).toBe(400);
+      expect(resDate.body.success).toBe(false);
+      expect(resDate.body.error.message).toBe('Invalid from date format');
+
+      // from date after to date
+      const resRange = await request(app).get(
+        '/api/v1/expenses?from=2026-02-01&to=2026-01-01'
+      );
+      expect(resRange.statusCode).toBe(400);
+      expect(resRange.body.success).toBe(false);
+      expect(resRange.body.error.message).toBe(
+        "'from' date must be before or equal to 'to' date"
+      );
+    });
+
     it('should return 500 if getting expenses throws an error', async () => {
       const originalFind = Expense.find;
       Expense.find = jest.fn(() => ({

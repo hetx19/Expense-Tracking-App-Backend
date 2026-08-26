@@ -118,6 +118,96 @@ describe('Expense Repository Unit Tests', () => {
       });
     });
 
+    it('should filter by category and date range from/to', async () => {
+      const fromDate = '2026-01-01';
+      const toDate = '2026-01-31';
+      const mockItems = [{ _id: 'exp1' }];
+      const mockLimit = jest.fn().mockResolvedValue(mockItems);
+      const mockSort = jest.fn().mockReturnValue({ limit: mockLimit });
+      Expense.find.mockReturnValue({ sort: mockSort });
+
+      const result = await expenseRepository.findByUser('user123', {
+        category: 'Food',
+        from: fromDate,
+        to: toDate,
+      });
+
+      expect(Expense.find).toHaveBeenCalledWith({
+        userId: 'user123',
+        category: 'Food',
+        date: {
+          $gte: new Date(fromDate),
+          $lte: new Date(toDate),
+        },
+      });
+      expect(result.data).toEqual(mockItems);
+
+      // from only
+      await expenseRepository.findByUser('user123', { from: fromDate });
+      expect(Expense.find).toHaveBeenCalledWith({
+        userId: 'user123',
+        date: { $gte: new Date(fromDate) },
+      });
+
+      // to only
+      await expenseRepository.findByUser('user123', { to: toDate });
+      expect(Expense.find).toHaveBeenCalledWith({
+        userId: 'user123',
+        date: { $lte: new Date(toDate) },
+      });
+    });
+
+    it('should sort by custom sort parameters (amount, -amount, date, -date)', async () => {
+      const mockLimit = jest.fn().mockResolvedValue([]);
+      const mockSort = jest.fn().mockReturnValue({ limit: mockLimit });
+      Expense.find.mockReturnValue({ sort: mockSort });
+
+      // sort = amount (asc)
+      await expenseRepository.findByUser('user123', { sort: 'amount' });
+      expect(mockSort).toHaveBeenCalledWith({ amount: 1, _id: 1 });
+
+      // sort = -amount (desc)
+      await expenseRepository.findByUser('user123', { sort: '-amount' });
+      expect(mockSort).toHaveBeenCalledWith({ amount: -1, _id: -1 });
+
+      // sort = date (asc)
+      await expenseRepository.findByUser('user123', { sort: 'date' });
+      expect(mockSort).toHaveBeenCalledWith({ date: 1, _id: 1 });
+
+      // sort = -date (desc)
+      await expenseRepository.findByUser('user123', { sort: '-date' });
+      expect(mockSort).toHaveBeenCalledWith({ date: -1, _id: -1 });
+    });
+
+    it('should filter by cursor matching ascending sort order', async () => {
+      const validObjectId = '507f1f77bcf86cd799439011';
+      Expense.findById.mockResolvedValue({
+        _id: validObjectId,
+        amount: 50,
+      });
+
+      const mockItems = [{ _id: 'exp21' }];
+      const mockLimit = jest.fn().mockResolvedValue(mockItems);
+      const mockSort = jest.fn().mockReturnValue({ limit: mockLimit });
+      Expense.find.mockReturnValue({ sort: mockSort });
+
+      const result = await expenseRepository.findByUser('user123', {
+        limit: 20,
+        cursor: validObjectId,
+        sort: 'amount',
+      });
+
+      expect(Expense.findById).toHaveBeenCalledWith(validObjectId);
+      expect(Expense.find).toHaveBeenCalledWith({
+        userId: 'user123',
+        $or: [
+          { amount: { $gt: 50 } },
+          { amount: 50, _id: { $gt: validObjectId } },
+        ],
+      });
+      expect(result.data).toEqual(mockItems);
+    });
+
     it('should return all items without limit when all is true', async () => {
       const mockItems = [{ _id: 'exp1' }, { _id: 'exp2' }];
       const mockSort = jest.fn().mockResolvedValue(mockItems);

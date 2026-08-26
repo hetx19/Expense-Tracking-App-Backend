@@ -1,17 +1,82 @@
 const mongoose = require('mongoose');
 const Income = require('../models/Income');
 
+const getSortConfig = (sortParam) => {
+  switch (sortParam) {
+    case 'date':
+    case '+date':
+    case 'date_asc':
+    case 'date:asc':
+    case 'asc':
+      return { sortObj: { date: 1, _id: 1 }, sortField: 'date', sortOrder: 1 };
+    case 'amount':
+    case '+amount':
+    case 'amount_asc':
+    case 'amount:asc':
+      return {
+        sortObj: { amount: 1, _id: 1 },
+        sortField: 'amount',
+        sortOrder: 1,
+      };
+    case '-amount':
+    case 'amount_desc':
+    case 'amount:desc':
+      return {
+        sortObj: { amount: -1, _id: -1 },
+        sortField: 'amount',
+        sortOrder: -1,
+      };
+    case '-date':
+    case 'date_desc':
+    case 'date:desc':
+    case 'desc':
+    default:
+      return {
+        sortObj: { date: -1, _id: -1 },
+        sortField: 'date',
+        sortOrder: -1,
+      };
+  }
+};
+
 const findByUser = async (
   userId,
-  { limit = 20, cursor, all = false } = {}
+  {
+    limit = 20,
+    cursor,
+    source,
+    category,
+    from,
+    to,
+    sort = '-date',
+    all = false,
+  } = {}
 ) => {
+  const query = { userId };
+
+  const sourceFilter = source || category;
+  if (sourceFilter) {
+    query.source = sourceFilter;
+  }
+
+  if (from || to) {
+    query.date = {};
+    if (from) {
+      query.date.$gte = new Date(from);
+    }
+    if (to) {
+      query.date.$lte = new Date(to);
+    }
+  }
+
+  const { sortObj, sortField, sortOrder } = getSortConfig(sort);
+
   if (all) {
-    const items = await Income.find({ userId }).sort({ date: -1, _id: -1 });
+    const items = await Income.find(query).sort(sortObj);
     return { data: items, meta: { nextCursor: null, hasMore: false } };
   }
 
   const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
-  const query = { userId };
 
   if (cursor) {
     if (!mongoose.Types.ObjectId.isValid(cursor)) {
@@ -21,14 +86,23 @@ const findByUser = async (
     if (!cursorDoc) {
       return { data: [], meta: { nextCursor: null, hasMore: false } };
     }
-    query.$or = [
-      { date: { $lt: cursorDoc.date } },
-      { date: cursorDoc.date, _id: { $lt: cursorDoc._id } },
-    ];
+
+    const cursorVal = cursorDoc[sortField];
+    if (sortOrder === -1) {
+      query.$or = [
+        { [sortField]: { $lt: cursorVal } },
+        { [sortField]: cursorVal, _id: { $lt: cursorDoc._id } },
+      ];
+    } else {
+      query.$or = [
+        { [sortField]: { $gt: cursorVal } },
+        { [sortField]: cursorVal, _id: { $gt: cursorDoc._id } },
+      ];
+    }
   }
 
   const items = await Income.find(query)
-    .sort({ date: -1, _id: -1 })
+    .sort(sortObj)
     .limit(parsedLimit + 1);
 
   const hasMore = items.length > parsedLimit;

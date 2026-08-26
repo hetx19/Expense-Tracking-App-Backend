@@ -1,7 +1,10 @@
 const express = require('express');
 const protect = require('../middleware/auth');
 const validate = require('../middleware/validate');
-const { addExpenseSchema } = require('../controllers/expense.validation');
+const {
+  addExpenseSchema,
+  listExpenseQuerySchema,
+} = require('../controllers/expense.validation');
 const {
   addExpense,
   getAllExpense,
@@ -11,7 +14,7 @@ const {
 
 const router = express.Router();
 
-router.get('/', protect, getAllExpense);
+router.get('/', protect, validate(listExpenseQuerySchema, 'query'), getAllExpense);
 router.post('/', protect, validate(addExpenseSchema), addExpense);
 router.delete('/:id', protect, deleteExpense);
 router.get('/download', protect, downloadExpenseExcel);
