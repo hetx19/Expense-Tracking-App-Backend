@@ -8,6 +8,7 @@ const logger = require('./utils/logger');
 const { globalLimiter } = require('./middleware/rateLimiters');
 
 // Routes
+const healthRoutes = require('./routes/healthRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const incomeRoutes = require('./routes/incomeRoutes');
@@ -37,6 +38,7 @@ app.use(
 );
 
 // Routes
+app.use('/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/incomes', incomeRoutes);

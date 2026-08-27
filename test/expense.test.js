@@ -341,7 +341,9 @@ describe('Expense API', () => {
       expect(resSort.body.error.message).toContain('Invalid sort parameter');
 
       // Invalid date format
-      const resDate = await request(app).get('/api/v1/expenses?from=not-a-date');
+      const resDate = await request(app).get(
+        '/api/v1/expenses?from=not-a-date'
+      );
       expect(resDate.statusCode).toBe(400);
       expect(resDate.body.success).toBe(false);
       expect(resDate.body.error.message).toBe('Invalid from date format');

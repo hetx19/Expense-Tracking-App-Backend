@@ -14,7 +14,12 @@ const {
 
 const router = express.Router();
 
-router.get('/', protect, validate(listExpenseQuerySchema, 'query'), getAllExpense);
+router.get(
+  '/',
+  protect,
+  validate(listExpenseQuerySchema, 'query'),
+  getAllExpense
+);
 router.post('/', protect, validate(addExpenseSchema), addExpense);
 router.delete('/:id', protect, deleteExpense);
 router.get('/download', protect, downloadExpenseExcel);

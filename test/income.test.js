@@ -224,7 +224,9 @@ describe('Income API', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(2);
-      expect(res.body.data.every((item) => item.source === 'Salary')).toBe(true);
+      expect(res.body.data.every((item) => item.source === 'Salary')).toBe(
+        true
+      );
     });
 
     it('should filter income by date range (from and to)', async () => {
