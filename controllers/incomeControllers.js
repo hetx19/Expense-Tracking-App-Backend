@@ -19,10 +19,7 @@ const deleteIncome = asyncHandler(async (req, res) => {
     req.params.id,
     req.user._id,
   );
-  res.json({
-    message: "Income Deleted Successfully",
-    deletedIncome,
-  });
+  res.json({ message: "Income Deleted Successfully", deletedIncome });
 });
 
 const downloadIncomeExcel = asyncHandler(async (req, res) => {

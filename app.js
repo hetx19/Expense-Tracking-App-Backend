@@ -13,6 +13,7 @@ const incomeRoutes = require("./routes/incomeRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 
+// Configuring Enviroment Variables
 const env = require("./config/env");
 
 const app = express();

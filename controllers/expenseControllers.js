@@ -19,10 +19,7 @@ const deleteExpense = asyncHandler(async (req, res) => {
     req.params.id,
     req.user._id,
   );
-  res.json({
-    message: "Expense Deleted Successfully",
-    deletedExpense,
-  });
+  res.json({ message: "Expense Deleted Successfully", deletedExpense });
 });
 
 const downloadExpenseExcel = asyncHandler(async (req, res) => {

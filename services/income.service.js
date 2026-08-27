@@ -40,9 +40,14 @@ const generateIncomeExcel = async (userId) => {
   );
 };
 
+const deleteAllIncomeByUser = async (userId) => {
+  return await incomeRepository.deleteByUser(userId);
+};
+
 module.exports = {
   addIncome,
   getAllIncome,
   deleteIncome,
   generateIncomeExcel,
+  deleteAllIncomeByUser,
 };
