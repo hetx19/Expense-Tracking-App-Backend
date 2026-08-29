@@ -19,19 +19,21 @@ The API lets a user register, sign in, and manage their own expense and income r
 - **Structured logging** — [Pino](https://getpino.io/) request/response logging via `pino-http`, with an `x-request-id` generated (or echoed back, if the client sent one) on every request for log correlation.
 - **Centralized error handling** — A single Express error-handling middleware normalizes all thrown errors into a consistent JSON response and hides internal details in production.
 - **Startup config validation** — Environment variables are parsed and validated with [Zod](https://zod.dev/) at boot; the process exits immediately if required variables are missing or malformed.
+- **OpenAPI & Swagger UI** — Full interactive API documentation served at [/api/docs](http://localhost:5001/api/docs) and raw spec at `/api/docs.json`, generated from Zod validation schemas and exported to [`docs/openapi.yaml`](docs/openapi.yaml).
 
 ## Tech Stack
 
-| Layer        | Technology                               |
-| ------------ | ---------------------------------------- |
-| Runtime      | Node.js, Express 5                       |
-| Database     | MongoDB via Mongoose                     |
-| Auth         | `jsonwebtoken`, `bcryptjs`               |
-| Validation   | Zod (environment configuration)          |
-| File uploads | Multer + Cloudinary                      |
-| Logging      | Pino, `pino-http`                        |
-| Security     | Helmet, `express-rate-limit`, CORS       |
-| Testing      | Jest, Supertest, `mongodb-memory-server` |
+| Layer         | Technology                                                                       |
+| ------------- | -------------------------------------------------------------------------------- |
+| Runtime       | Node.js, Express 5                                                               |
+| Database      | MongoDB via Mongoose                                                             |
+| Auth          | `jsonwebtoken`, `bcryptjs`                                                       |
+| Validation    | Zod (environment configuration & request validation)                             |
+| Documentation | OpenAPI 3.0, Swagger UI (`swagger-ui-express`, `@asteasolutions/zod-to-openapi`) |
+| File uploads  | Multer + Cloudinary                                                              |
+| Logging       | Pino, `pino-http`                                                                |
+| Security      | Helmet, `express-rate-limit`, CORS                                               |
+| Testing       | Jest, Supertest, `mongodb-memory-server`                                         |
 
 ## Prerequisites
 
@@ -91,21 +93,27 @@ By default the API is available at `http://localhost:5001`.
 
 ```text
 .
-├── app.js                  # Express app: middleware and route wiring
+├── app.js                  # Express app: middleware, Swagger UI, and route wiring
 ├── server.js                # Process entry point: connects to MongoDB, starts the server
 ├── config/
 │   ├── env.js                # Zod-validated environment configuration
 │   ├── db.js                  # MongoDB connection
-│   └── cloudinary.js          # Cloudinary client configuration
-├── controllers/              # Request handlers for auth, expense, income, dashboard
-├── routes/                   # Express routers, mounted under /api/v1/*
+│   ├── cloudinary.js          # Cloudinary client configuration
+│   └── swagger.js             # OpenAPI 3.0 registry & Swagger UI configuration
+├── controllers/              # Request handlers and Zod validation schemas
+├── docs/
+│   ├── openapi.yaml           # Generated OpenAPI 3.0 YAML specification
+│   └── plan.md                # Development roadmap and PR breakdown
+├── routes/                   # Express routers (mounted under /api/v1/* and /health)
 ├── middleware/
 │   ├── auth.js                 # JWT verification (route protection)
-│   ├── upload.js                # Multer configuration for image uploads
+│   ├── errorHandler.js          # Centralized error-handling middleware
 │   ├── rateLimiters.js          # Global and auth-specific rate limiters
-│   └── errorHandler.js          # Centralized error-handling middleware
-├── validators/                # Zod request-validation schemas (see note below)
+│   ├── upload.js                # Multer configuration for image uploads
+│   └── validate.js              # Zod request validation middleware
 ├── models/                    # Mongoose schemas: User, Expense, Income
+├── repositories/              # Database access layer for models
+├── services/                  # Business logic services
 ├── utils/
 │   ├── AppError.js              # Custom operational-error class
 │   ├── asyncHandler.js          # Wraps async route handlers for error propagation
@@ -113,11 +121,26 @@ By default the API is available at `http://localhost:5001`.
 └── test/                      # Jest + Supertest test suites
 ```
 
-> **Note:** `validators/` contains Zod schemas for request bodies, but they are not yet wired into the route handlers — request-level validation currently happens with manual checks inside the controllers. Environment variable validation (`config/env.js`) is the only Zod validation active at runtime today.
+## API Documentation
+
+Interactive Swagger UI documentation is available when running the server:
+
+- **Swagger UI:** [http://localhost:5001/api/docs](http://localhost:5001/api/docs)
+- **OpenAPI JSON Spec:** [http://localhost:5001/api/docs.json](http://localhost:5001/api/docs.json)
+- **OpenAPI YAML Spec:** [`docs/openapi.yaml`](docs/openapi.yaml)
+
+Request validation models and schema components are derived directly from the application's Zod validation schemas via `@asteasolutions/zod-to-openapi`.
 
 ## API Overview
 
-All routes are mounted under `/api/v1`. Routes marked **Auth** require a valid `Authorization: Bearer <token>` header.
+All primary resource routes are mounted under `/api/v1`. Health checks are mounted at `/health`. Routes marked **Auth** require a valid `Authorization: Bearer <token>` header.
+
+### Health (`/health`)
+
+| Method | Path            | Auth | Description                                         |
+| ------ | --------------- | ---- | --------------------------------------------------- |
+| `GET`  | `/health`       | No   | Liveness check (verifies process is running)        |
+| `GET`  | `/health/ready` | No   | Readiness check (verifies MongoDB connection state) |
 
 ### Auth (`/api/v1/auth`)
 

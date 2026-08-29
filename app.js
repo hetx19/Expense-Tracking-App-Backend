@@ -7,6 +7,9 @@ const crypto = require('crypto');
 const logger = require('./utils/logger');
 const { globalLimiter } = require('./middleware/rateLimiters');
 
+const swaggerUi = require('swagger-ui-express');
+const { swaggerSpec } = require('./config/swagger');
+
 // Routes
 const healthRoutes = require('./routes/healthRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -26,7 +29,17 @@ app.use(
     genReqId: (req) => req.headers['x-request-id'] || crypto.randomUUID(),
   })
 );
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        'script-src': ["'self'", "'unsafe-inline'"],
+        'img-src': ["'self'", 'data:', 'https:'],
+      },
+    },
+  })
+);
 app.use(globalLimiter);
 app.use(express.json());
 app.use(
@@ -36,6 +49,13 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
+
+// API Documentation
+app.get('/api/docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes
 app.use('/health', healthRoutes);
