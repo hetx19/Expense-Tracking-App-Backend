@@ -71,12 +71,13 @@ describe("GET /api/dashboard", () => {
     const response = await request(app).get("/api/dashboard");
 
     expect(response.status).toBe(200);
-    expect(response.body.totalBalance).toBe(1500);
-    expect(response.body.totalIncome).toBe(3000);
-    expect(response.body.totalExpenses).toBe(1500);
-    expect(response.body.last60DaysIncome.total).toBe(1000);
-    expect(response.body.last30DaysExpenses.total).toBe(500);
-    expect(Array.isArray(response.body.recentTransactions)).toBe(true);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.totalBalance).toBe(1500);
+    expect(response.body.data.totalIncome).toBe(3000);
+    expect(response.body.data.totalExpenses).toBe(1500);
+    expect(response.body.data.last60DaysIncome.total).toBe(1000);
+    expect(response.body.data.last30DaysExpenses.total).toBe(500);
+    expect(Array.isArray(response.body.data.recentTransactions)).toBe(true);
   });
 
   it("should handle server error gracefully", async () => {
@@ -85,7 +86,8 @@ describe("GET /api/dashboard", () => {
     const response = await request(app).get("/api/dashboard");
 
     expect(response.status).toBe(500);
-    expect(response.body).toHaveProperty("message", "Database error");
+    expect(response.body.success).toBe(false);
+    expect(response.body.error).toHaveProperty("message", "Database error");
   });
 
   it("should return zero totals when user has no transactions", async () => {
@@ -117,11 +119,12 @@ describe("GET /api/dashboard", () => {
     const response = await request(app).get("/api/dashboard");
 
     expect(response.status).toBe(200);
-    expect(response.body.totalBalance).toBe(0);
-    expect(response.body.totalIncome).toBe(0);
-    expect(response.body.totalExpenses).toBe(0);
-    expect(response.body.last60DaysIncome.total).toBe(0);
-    expect(response.body.last30DaysExpenses.total).toBe(0);
-    expect(response.body.recentTransactions).toEqual([]);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.totalBalance).toBe(0);
+    expect(response.body.data.totalIncome).toBe(0);
+    expect(response.body.data.totalExpenses).toBe(0);
+    expect(response.body.data.last60DaysIncome.total).toBe(0);
+    expect(response.body.data.last30DaysExpenses.total).toBe(0);
+    expect(response.body.data.recentTransactions).toEqual([]);
   });
 });

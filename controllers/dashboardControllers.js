@@ -3,7 +3,7 @@ const asyncHandler = require("../utils/asyncHandler");
 
 const getDashboardData = asyncHandler(async (req, res) => {
   const data = await dashboardService.getDashboardData(req.user._id);
-  res.json(data);
+  res.status(200).json({ success: true, data });
 });
 
 module.exports = getDashboardData;

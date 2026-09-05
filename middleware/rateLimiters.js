@@ -5,7 +5,13 @@ const globalLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: "Too many requests, please try again later." },
+  message: {
+    success: false,
+    error: {
+      message: "Too many requests, please try again later.",
+      code: 429,
+    },
+  },
 });
 
 const authLimiter = rateLimit({
@@ -14,7 +20,11 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    message: "Too many authentication attempts, please try again later.",
+    success: false,
+    error: {
+      message: "Too many authentication attempts, please try again later.",
+      code: 429,
+    },
   },
 });
 

@@ -84,7 +84,8 @@ describe("POST /api/auth/upload-image", () => {
       .attach("image", testImagePath);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.imageUrl).toBe(mockResult.secure_url);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.imageUrl).toBe(mockResult.secure_url);
     expect(mockCloudinary.uploader.upload).toHaveBeenCalledWith(
       expect.any(String),
       { folder: "expense-tracker" },
@@ -97,7 +98,8 @@ describe("POST /api/auth/upload-image", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("No File Uploaded");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("No File Uploaded");
   });
 
   it("should return 400 for invalid file type", async () => {
@@ -115,7 +117,8 @@ describe("POST /api/auth/upload-image", () => {
       .attach("image", testFilePath);
 
     expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe("No File Uploaded");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("No File Uploaded");
   });
 
   it("should handle cloudinary upload error", async () => {
@@ -139,7 +142,8 @@ describe("POST /api/auth/upload-image", () => {
       .attach("image", testImagePath);
 
     expect(res.statusCode).toBe(500);
-    expect(res.body.message).toBe("Cloudinary upload failed");
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toBe("Cloudinary upload failed");
   });
 });
 
@@ -183,7 +187,10 @@ describe("POST /api/auth/update-image", () => {
     await uploadImage(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({ imageUrl: mockResult.secure_url });
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: { imageUrl: mockResult.secure_url },
+    });
     expect(mockCloudinary.uploader.upload).toHaveBeenCalledWith(
       "/tmp/test-image.jpg",
       { folder: "expense-tracker" },
@@ -216,6 +223,7 @@ describe("POST /api/auth/update-image", () => {
 
 describe("PUT /api/auth/update-image", () => {
   let user;
+  let token;
 
   beforeEach(async () => {
     const userData = await createUserAndToken();
@@ -241,7 +249,8 @@ describe("PUT /api/auth/update-image", () => {
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
-      imageUrl: "http://example.com/profile.jpg",
+      success: true,
+      data: { imageUrl: "http://example.com/profile.jpg" },
     });
   });
 

@@ -36,10 +36,14 @@ describe("errorHandler Middleware", () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
-      status: "fail",
-      message: "Test error message",
-      stack: expect.any(String),
-      details: { field: "email" },
+      success: false,
+      error: {
+        message: "Test error message",
+        code: 400,
+        status: "fail",
+        details: { field: "email" },
+        stack: expect.any(String),
+      },
       requestId: "test-req-id-123",
     });
   });
@@ -56,12 +60,16 @@ describe("errorHandler Middleware", () => {
 
     expect(res.status).toHaveBeenCalledWith(422);
     expect(res.json).toHaveBeenCalledWith({
-      status: "fail",
-      message: "Operational issue",
-      details: { issue: "Invalid payload" },
+      success: false,
+      error: {
+        message: "Operational issue",
+        code: 422,
+        status: "fail",
+        details: { issue: "Invalid payload" },
+      },
       requestId: "test-req-id-123",
     });
-    expect(res.json.mock.calls[0][0].stack).toBeUndefined();
+    expect(res.json.mock.calls[0][0].error.stack).toBeUndefined();
   });
 
   it("should handle operational error in production environment without details", () => {
@@ -75,8 +83,12 @@ describe("errorHandler Middleware", () => {
 
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({
-      status: "fail",
-      message: "Operational issue without details",
+      success: false,
+      error: {
+        message: "Operational issue without details",
+        code: 404,
+        status: "fail",
+      },
       requestId: "test-req-id-123",
     });
   });
@@ -94,12 +106,16 @@ describe("errorHandler Middleware", () => {
         url: "/api/test",
         method: "GET",
       },
-      "Unhandled crash"
+      "Unhandled crash",
     );
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
-      status: "error",
-      message: "Something went very wrong!",
+      success: false,
+      error: {
+        message: "Something went very wrong!",
+        code: 500,
+        status: "error",
+      },
       requestId: "test-req-id-123",
     });
   });
@@ -114,8 +130,12 @@ describe("errorHandler Middleware", () => {
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
-      status: "error",
-      message: "Something went very wrong!",
+      success: false,
+      error: {
+        message: "Something went very wrong!",
+        code: 500,
+        status: "error",
+      },
       requestId: "test-req-id-123",
     });
   });
@@ -128,8 +148,12 @@ describe("errorHandler Middleware", () => {
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
-      status: "error",
-      message: "Something went very wrong!",
+      success: false,
+      error: {
+        message: "Something went very wrong!",
+        code: 500,
+        status: "error",
+      },
     });
   });
 
@@ -142,9 +166,13 @@ describe("errorHandler Middleware", () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        status: "error",
-        message: "Generic error",
-      })
+        success: false,
+        error: expect.objectContaining({
+          message: "Generic error",
+          code: 500,
+          status: "error",
+        }),
+      }),
     );
   });
 });

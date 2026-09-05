@@ -47,9 +47,10 @@ describe("Expense API", () => {
         date: "2025-07-20",
       });
 
-      expect(res.statusCode).toBe(200);
-      expect(res.body.category).toBe("Food");
-      expect(res.body.amount).toBe(20);
+      expect(res.statusCode).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.category).toBe("Food");
+      expect(res.body.data.amount).toBe(20);
     });
 
     it("should fail when required fields are missing", async () => {
@@ -59,7 +60,8 @@ describe("Expense API", () => {
       });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.message).toBe("Missing Required Fields");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Missing Required Fields");
     });
 
     it("should fail when amount is negative", async () => {
@@ -71,14 +73,15 @@ describe("Expense API", () => {
       });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.message).toBe("Amount must be a positive number");
-      expect(res.body.details).toEqual(
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Amount must be a positive number");
+      expect(res.body.error.details).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             field: "amount",
             message: "Amount must be a positive number",
           }),
-        ])
+        ]),
       );
     });
 
@@ -91,14 +94,15 @@ describe("Expense API", () => {
       });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.message).toBe("Invalid date format");
-      expect(res.body.details).toEqual(
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Invalid date format");
+      expect(res.body.error.details).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             field: "date",
             message: "Invalid date format",
           }),
-        ])
+        ]),
       );
     });
 
@@ -116,7 +120,8 @@ describe("Expense API", () => {
       });
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Mock DB error");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Mock DB error");
 
       Expense.prototype.save = originalSave;
     });
@@ -143,7 +148,8 @@ describe("Expense API", () => {
 
       const res = await request(app).get("/api/expense");
       expect(res.statusCode).toBe(200);
-      expect(res.body.length).toBe(2);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(2);
     });
 
     it("should return 500 if getting expenses throws an error", async () => {
@@ -155,7 +161,8 @@ describe("Expense API", () => {
       const res = await request(app).get("/api/expense");
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Mock get error");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Mock get error");
 
       Expense.find = originalFind;
     });
@@ -173,7 +180,8 @@ describe("Expense API", () => {
 
       const res = await request(app).delete(`/api/expense/${expense._id}`);
       expect(res.statusCode).toBe(200);
-      expect(res.body.message).toBe("Expense Deleted Successfully");
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.message).toBe("Expense Deleted Successfully");
     });
 
     it("should return 404 if expense not found", async () => {
@@ -181,7 +189,8 @@ describe("Expense API", () => {
       const res = await request(app).delete(`/api/expense/${fakeId}`);
 
       expect(res.statusCode).toBe(404);
-      expect(res.body.message).toBe("Expense Not Found");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Expense Not Found");
     });
 
     it("should not delete another user's expense", async () => {
@@ -198,7 +207,8 @@ describe("Expense API", () => {
       const res = await request(app).delete(`/api/expense/${expense._id}`);
 
       expect(res.statusCode).toBe(404);
-      expect(res.body.message).toBe("Expense Not Found");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Expense Not Found");
 
       const stillExists = await Expense.findById(expense._id);
       expect(stillExists).not.toBeNull();
@@ -216,7 +226,8 @@ describe("Expense API", () => {
       const res = await request(app).delete(`/api/expense/${fakeId}`);
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Mock delete error");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Mock delete error");
 
       Expense.findOneAndDelete = originalFindOneAndDelete;
     });
@@ -251,7 +262,8 @@ describe("Expense API", () => {
       const res = await request(app).get("/api/expense/download");
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Mock Excel error");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Mock Excel error");
 
       Expense.find = originalFind;
     });

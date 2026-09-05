@@ -48,9 +48,10 @@ describe("Income API", () => {
         date: "2025-07-20",
       });
 
-      expect(res.statusCode).toBe(200);
-      expect(res.body.source).toBe("Freelance");
-      expect(res.body.amount).toBe(2000);
+      expect(res.statusCode).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.source).toBe("Freelance");
+      expect(res.body.data.amount).toBe(2000);
     });
 
     it("should fail when required fields are missing", async () => {
@@ -60,7 +61,8 @@ describe("Income API", () => {
       });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.message).toBe("Missing Required Fields");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Missing Required Fields");
     });
 
     it("should fail when amount is negative", async () => {
@@ -72,8 +74,9 @@ describe("Income API", () => {
       });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.message).toBe("Amount must be a positive number");
-      expect(res.body.details).toEqual(
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Amount must be a positive number");
+      expect(res.body.error.details).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             field: "amount",
@@ -92,8 +95,9 @@ describe("Income API", () => {
       });
 
       expect(res.statusCode).toBe(400);
-      expect(res.body.message).toBe("Invalid date format");
-      expect(res.body.details).toEqual(
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Invalid date format");
+      expect(res.body.error.details).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             field: "date",
@@ -117,7 +121,8 @@ describe("Income API", () => {
       });
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Mock DB error");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Mock DB error");
 
       Income.prototype.save = originalSave;
     });
@@ -144,7 +149,8 @@ describe("Income API", () => {
 
       const res = await request(app).get("/api/income");
       expect(res.statusCode).toBe(200);
-      expect(res.body.length).toBe(2);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.length).toBe(2);
     });
 
     it("should return 500 if getting incomes throws an error", async () => {
@@ -156,7 +162,8 @@ describe("Income API", () => {
       const res = await request(app).get("/api/income");
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Mock get error");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Mock get error");
 
       Income.find = originalFind;
     });
@@ -174,14 +181,16 @@ describe("Income API", () => {
 
       const res = await request(app).delete(`/api/income/${income._id}`);
       expect(res.statusCode).toBe(200);
-      expect(res.body.message).toBe("Income Deleted Successfully");
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.message).toBe("Income Deleted Successfully");
     });
 
     it("should return 404 if income not found", async () => {
       const fakeId = new mongoose.Types.ObjectId();
       const res = await request(app).delete(`/api/income/${fakeId}`);
       expect(res.statusCode).toBe(404);
-      expect(res.body.message).toBe("Income Not Found");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Income Not Found");
     });
 
     it("should not delete another user's income", async () => {
@@ -198,7 +207,8 @@ describe("Income API", () => {
       const res = await request(app).delete(`/api/income/${income._id}`);
 
       expect(res.statusCode).toBe(404);
-      expect(res.body.message).toBe("Income Not Found");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Income Not Found");
 
       const stillExists = await Income.findById(income._id);
       expect(stillExists).not.toBeNull();
@@ -216,7 +226,8 @@ describe("Income API", () => {
       const res = await request(app).delete(`/api/income/${fakeId}`);
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Mock delete error");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Mock delete error");
 
       Income.findOneAndDelete = originalFindOneAndDelete;
     });
@@ -251,7 +262,8 @@ describe("Income API", () => {
       const res = await request(app).get("/api/income/download");
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe("Mock Excel error");
+      expect(res.body.success).toBe(false);
+      expect(res.body.error.message).toBe("Mock Excel error");
 
       Income.find = originalFind;
     });

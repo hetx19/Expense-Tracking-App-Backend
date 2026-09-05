@@ -41,7 +41,8 @@ describe("Rate Limiters Middleware", () => {
     const res = await request(app).post("/api/auth/signin").send(payload);
 
     expect(res.statusCode).toBe(429);
-    expect(res.body.message).toMatch(/Too many authentication attempts/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toMatch(/Too many authentication attempts/i);
     expect(res.headers["retry-after"]).toBeDefined();
   });
 
@@ -61,6 +62,7 @@ describe("Rate Limiters Middleware", () => {
     const res = await request(app).post("/api/auth/signup").send(payload);
 
     expect(res.statusCode).toBe(429);
-    expect(res.body.message).toMatch(/Too many authentication attempts/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error.message).toMatch(/Too many authentication attempts/i);
   });
 });
